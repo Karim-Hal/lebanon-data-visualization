@@ -6,7 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from src.config import COLORS
+from src.config import COLORS, PALETTE, POPULATION_GROUPS
 from src.data_loader import load_ipc_geo, load_ipc_population_groups, load_wfp_prices
 
 st.set_page_config(page_title="Food Insecurity · Lebanon Crisis", page_icon="🗺️", layout="wide")
@@ -14,8 +14,6 @@ st.set_page_config(page_title="Food Insecurity · Lebanon Crisis", page_icon="�
 ASSETS = Path(__file__).parent.parent / "assets"
 GEOJSON_PATH = ASSETS / "geoBoundaries-LBN-ADM1_simplified.geojson"
 
-# Mapping: IPC admin1_normalized sub-district → main governorate
-# GeoJSON shapeNames now match the 8 main governorate names used in our data.
 IPC_TO_GOV = {
     "Akkar":            "Akkar",
     "Baalbek-El Hermel":"Baalbek-El Hermel",
@@ -48,6 +46,9 @@ PHASE_COLS = {
     "Phase 5": ("Phase 5 percentage current", COLORS["ipc_phase_5"]),
 }
 
+# Consistent color mapping for population groups using project palette
+POP_GROUP_COLORS = {grp: PALETTE[i] for i, grp in enumerate(POPULATION_GROUPS)}
+
 # ---------------------------------------------------------------------------
 # Load data
 # ---------------------------------------------------------------------------
@@ -71,6 +72,26 @@ st.markdown(
 st.markdown("---")
 
 # ---------------------------------------------------------------------------
+# Sticky CSS for the date slicer
+# ---------------------------------------------------------------------------
+st.markdown(
+    f"""
+    <style>
+    /* Sticky IPC snapshot slicer */
+    section.main div[data-testid="stSelectSlider"] {{
+        position: fixed;
+        top: 3.5rem;
+        z-index: 999;
+        background-color: {COLORS['bg']};
+        padding: 0.6rem 0 0.4rem;
+        border-bottom: 1px solid #d9d9d9;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ---------------------------------------------------------------------------
 # Date slicer
 # ---------------------------------------------------------------------------
 available_dates = sorted(geo["analysis_date"].dropna().unique())
@@ -83,6 +104,7 @@ selected_label = st.select_slider(
     value=date_labels[-1],
 )
 selected_date = pd.Timestamp(date_label_map[selected_label])
+selected_year = selected_date.year
 
 geo_snap = geo[geo["analysis_date"] == selected_date].copy()
 
@@ -114,8 +136,8 @@ with col_map:
         )
         choro_df["phase3_pct_display"] = (choro_df["phase3_pct"] * 100).round(1)
 
-        # Keserwan-Jbeil is a separate GeoJSON feature carved out of Mount Lebanon.
-        # IPC data doesn't distinguish it, so assign it Mount Lebanon's value.
+        # Keserwan-Jbeil is a separate GeoJSON feature carved out of Mount Lebanon;
+        # IPC data doesn't distinguish it so mirror Mount Lebanon's value.
         ml_row = choro_df[choro_df["gov"] == "Mount Lebanon"]
         if not ml_row.empty:
             kj_row = ml_row.copy()
@@ -143,15 +165,10 @@ with col_map:
             hover_name="gov",
             hover_data={"gov": False, "phase3_pct_display": True},
         )
-
         fig_choro.update_layout(
             height=450,
             margin=dict(l=0, r=0, t=0, b=0),
-            coloraxis_colorbar=dict(
-                title="Phase 3+%",
-                ticksuffix="%",
-                len=0.7,
-            ),
+            coloraxis_colorbar=dict(title="Phase 3+%", ticksuffix="%", len=0.7),
         )
         st.plotly_chart(fig_choro, use_container_width=True)
 
@@ -162,65 +179,72 @@ with col_donut:
         unsafe_allow_html=True,
     )
 
-    pop_dates = sorted(ipc_pop["analysis_date"].unique())
-    closest_pop_date = min(
-        pop_dates,
-        key=lambda d: abs((pd.Timestamp(d) - selected_date).days)
+    # Different population groups are surveyed on staggered dates.
+    # Take the most recent non-null row per group so all 5 groups always appear.
+    pop_latest = (
+        ipc_pop.dropna(subset=["Phase 3+ number current"])
+        .sort_values("analysis_date")
+        .groupby("Level 1", as_index=False)
+        .last()
     )
-    pop_snap = ipc_pop[ipc_pop["analysis_date"] == closest_pop_date].copy()
-    pop_snap = pop_snap.dropna(subset=["Phase 3+ number current"])
 
-    if pop_snap.empty:
-        st.info("No population group data available for this snapshot.")
+    if pop_latest.empty:
+        st.info("No population group data available.")
     else:
-        donut_colors = [
-            "#2E74B5", "#C00000", "#1F7A8C", "#E36C09", "#1F3864"
-        ]
+        ordered = [g for g in POPULATION_GROUPS if g in pop_latest["Level 1"].values]
+        pop_latest["Level 1"] = pd.Categorical(pop_latest["Level 1"], categories=ordered, ordered=True)
+        pop_latest = pop_latest.sort_values("Level 1")
+
+        donut_colors = [POP_GROUP_COLORS[g] for g in pop_latest["Level 1"]]
+
         fig_donut = px.pie(
-            pop_snap,
+            pop_latest,
             names="Level 1",
             values="Phase 3+ number current",
             hole=0.5,
             color_discrete_sequence=donut_colors,
         )
         fig_donut.update_traces(
+            customdata=pd.to_datetime(pop_latest["analysis_date"]).dt.strftime("%b %Y"),
             textposition="outside",
             textinfo="label+percent",
-            hovertemplate="<b>%{label}</b><br>%{value:,.0f} people<br>%{percent}<extra></extra>",
+            hovertemplate=(
+                "<b>%{label}</b><br>"
+                "%{value:,.0f} people<br>"
+                "%{percent}<br>"
+                "Survey: %{customdata}<extra></extra>"
+            ),
         )
         fig_donut.update_layout(
             height=420,
             margin=dict(l=20, r=20, t=20, b=20),
             showlegend=False,
             annotations=[dict(
-                text=f"<b>{pop_snap['Phase 3+ number current'].sum()/1e6:.2f}M</b><br>people",
+                text=f"<b>{pop_latest['Phase 3+ number current'].sum()/1e6:.2f}M</b><br>people",
                 x=0.5, y=0.5,
                 font=dict(size=14, color=COLORS["deep_navy"]),
                 showarrow=False,
             )],
         )
         st.plotly_chart(fig_donut, use_container_width=True)
-        st.caption(f"Population group data: closest snapshot = {pd.Timestamp(closest_pop_date).strftime('%b %Y')}")
+        st.caption("Each group shown at its most recent available survey. Hover for exact date.")
 
 st.markdown("---")
 
 # ---------------------------------------------------------------------------
-# Chart: IPC phase stacked bar by governorate
+# Chart: IPC phase stacked bar by governorate (follows snapshot date slicer)
 # ---------------------------------------------------------------------------
 st.markdown(
     f"<h3 style='color:{COLORS['deep_navy']}'>IPC Phase Distribution by Governorate</h3>",
     unsafe_allow_html=True,
 )
-st.caption("Stacked bars show % of analysed population in each IPC phase. Phases 3–5 (shaded) indicate food insecurity.")
+st.caption("Stacked bars show % of analysed population in each IPC phase. Phases 3–5 indicate food insecurity.")
 
-# Aggregate to GeoJSON governorate level for a cleaner bar chart
 bar_df = (
     geo_snap.dropna(subset=["gov"])
     .groupby("gov", as_index=False)
     .agg({col: "mean" for col, _ in PHASE_COLS.values()})
 )
-
-# Sort by Phase 3+ descending
 bar_df["phase3plus"] = bar_df[["Phase 3 percentage current",
                                 "Phase 4 percentage current",
                                 "Phase 5 percentage current"]].sum(axis=1)
@@ -246,43 +270,46 @@ fig_bar.update_layout(
     xaxis=dict(title="", tickangle=-30),
     hovermode="x unified",
 )
-
 st.plotly_chart(fig_bar, use_container_width=True)
 
 st.markdown("---")
 
 # ---------------------------------------------------------------------------
-# Chart: Food price by governorate (most recent 12 months, basket items)
+# Chart: Food price by governorate — year driven by the IPC snapshot slicer
 # ---------------------------------------------------------------------------
-st.markdown(
-    f"<h3 style='color:{COLORS['deep_navy']}'>Average Basket Price by Governorate — Last 12 Months</h3>",
-    unsafe_allow_html=True,
-)
-st.caption("Average USD price of basket commodities per governorate. admin1 = governorate in WFP data.")
-
 from src.config import BASKET
 
-cutoff = prices["date"].max() - pd.DateOffset(months=12)
-gov_price = (
-    prices[prices["commodity"].isin(BASKET) & (prices["date"] >= cutoff)]
-    .groupby("admin1", as_index=False)["usdprice"]
-    .mean()
-    .sort_values("usdprice", ascending=True)
+year_prices = prices[
+    prices["commodity"].isin(BASKET) & (prices["date"].dt.year == selected_year)
+]
+
+st.markdown(
+    f"<h3 style='color:{COLORS['deep_navy']}'>Average Basket Price by Governorate — {selected_year}</h3>",
+    unsafe_allow_html=True,
 )
+st.caption(f"Average USD price of basket commodities per governorate, {selected_year}. admin1 = governorate in WFP data.")
 
-fig_gov = go.Figure(go.Bar(
-    x=gov_price["usdprice"],
-    y=gov_price["admin1"],
-    orientation="h",
-    marker_color=COLORS["steel_blue"],
-    hovertemplate="<b>%{y}</b><br>Avg USD: $%{x:.2f}<extra></extra>",
-))
+if year_prices.empty:
+    st.info(f"No WFP basket price data available for {selected_year}.")
+else:
+    gov_price = (
+        year_prices
+        .groupby("admin1", as_index=False)["usdprice"]
+        .mean()
+        .sort_values(by="usdprice", ascending=True)
+    )
 
-fig_gov.update_layout(
-    height=340,
-    margin=dict(l=20, r=40, t=10, b=40),
-    xaxis=dict(title="Avg basket price (USD)", tickprefix="$", gridcolor="#E5E5E5"),
-    yaxis=dict(title=""),
-)
-
-st.plotly_chart(fig_gov, use_container_width=True)
+    fig_gov = go.Figure(go.Bar(
+        x=gov_price["usdprice"],
+        y=gov_price["admin1"],
+        orientation="h",
+        marker_color=COLORS["steel_blue"],
+        hovertemplate="<b>%{y}</b><br>Avg USD: $%{x:.2f}<extra></extra>",
+    ))
+    fig_gov.update_layout(
+        height=340,
+        margin=dict(l=20, r=40, t=10, b=40),
+        xaxis=dict(title="Avg basket price (USD)", tickprefix="$", gridcolor="#E5E5E5"),
+        yaxis=dict(title=""),
+    )
+    st.plotly_chart(fig_gov, use_container_width=True)

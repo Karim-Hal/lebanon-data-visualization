@@ -90,3 +90,21 @@ def check_governorate_alignment() -> list[str]:
 def load_basket_prices() -> pd.DataFrame:
     df = load_wfp_prices()
     return df[df["commodity"].isin(BASKET)].copy()
+
+
+@st.cache_data
+def load_u5mort_mena() -> pd.DataFrame:
+    df = pd.read_csv(DATA / "2322814_ALL_LATEST.csv")
+    df = df[
+        (df["DIM_SEX"] == "TOTAL") &
+        (df["DIM_POP_WEALTH_QUINTILE"] == "TOTAL") &
+        (df["DIM_TIME"] >= 2000)
+    ][["DIM_TIME", "GEO_NAME_SHORT", "RATE_PER_1000_N", "RATE_PER_1000_NL", "RATE_PER_1000_NU"]].copy()
+    df = df.rename(columns={
+        "DIM_TIME": "year",
+        "GEO_NAME_SHORT": "country",
+        "RATE_PER_1000_N": "rate",
+        "RATE_PER_1000_NL": "rate_low",
+        "RATE_PER_1000_NU": "rate_high",
+    })
+    return df

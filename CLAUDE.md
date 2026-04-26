@@ -280,6 +280,23 @@ POPULATION_GROUPS = [
 ]
 ```
 
+### Custom accent palette
+
+Ten-color project palette stored as `PALETTE` in `src/config.py`. Use for chart series, indicator lines, and peer-country differentiation. The `COLORS` dict above remains authoritative for semantic/structural colors (headers, event markers, IPC phases).
+
+| Hex | Name | Preferred use |
+|-----|------|---------------|
+| `#ff595e` | Coral red | Lebanon highlight, worsened/crisis indicators |
+| `#ffca3a` | Amber | Syria, anaemia, secondary warnings |
+| `#8ac926` | Green | Improvement, positive trend |
+| `#1982c4` | Blue | Saudi Arabia, infant mortality, neutral series |
+| `#6a4c93` | Dark purple | Egypt, under-5 mortality, deep analytical |
+| `#46dff7` | Cyan | Jordan, light secondary series |
+| `#a99df2` | Lavender | Tertiary indicator series |
+| `#ff89a6` | Pink | Quaternary indicator series |
+| `#af848c` | Muted rose | World reference lines, background series |
+| `#7f6aa3` | Medium purple | Additional indicator series |
+
 Typography: default Plotly font `family="Segoe UI, sans-serif"`, set via `plotly.io.templates`.
 
 ---

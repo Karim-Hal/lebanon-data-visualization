@@ -18,6 +18,22 @@ COLORS = {
     "card_bg":     "#EBF3FB",
 }
 
+# ---------------------------------------------------------------------------
+# Project accent palette (10 colors) — use for chart series, indicators, peers
+# ---------------------------------------------------------------------------
+PALETTE = [
+    "#ff595e",  # coral red   — crisis / Lebanon / worsened
+    "#ffca3a",  # amber       — warning / Syria / anaemia
+    "#8ac926",  # green       — improvement / positive trend
+    "#1982c4",  # blue        — Saudi Arabia / infant mortality / neutral
+    "#6a4c93",  # dark purple — Egypt / under-5 mortality / deep analytical
+    "#46dff7",  # cyan        — Jordan / secondary series
+    "#a99df2",  # lavender    — tertiary series
+    "#ff89a6",  # pink        — quaternary series
+    "#af848c",  # muted rose  — World reference / background series
+    "#7f6aa3",  # medium purple — additional series
+]
+
 # Per-country color assignments for macro charts
 COUNTRY_COLORS = {
     "Lebanon":                "#C00000",
