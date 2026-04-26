@@ -249,18 +249,20 @@ Timeline: horizontal sequence of three annotated events (Oct 2019, Aug 2020, Mar
 
 Centralize in `src/config.py`:
 
+In the visualizations, stick to this color palette.
+
 ```python
 COLORS = {
-    "crisis_red":    "#C00000",   # Lebanon lines, urgent KPIs
-    "deep_navy":     "#1F3864",   # headers, axis titles
-    "steel_blue":    "#2E74B5",   # neutral peers (Jordan, Saudi)
-    "teal":          "#1F7A8C",   # stable peers (UAE)
-    "warning":       "#E36C09",   # event markers
-    "ipc_phase_3":   "#FFC000",
-    "ipc_phase_4":   "#E36C09",
-    "ipc_phase_5":   "#C00000",
-    "bg":            "#F8F9FA",
-    "card_bg":       "#EBF3FB",
+    "1":    "#C00000",   # Lebanon lines, urgent KPIs
+    "2":    "#1F3864",   # headers, axis titles
+    "3":    "#2E74B5",   # neutral peers (Jordan, Saudi)
+    "4":    "#1F7A8C",   # stable peers (UAE)
+    "5":    "#E36C09",   # event markers
+    "6":    "#FFC000",
+    "7":    "#E36C09",
+    "8":    "#C00000",
+    "9":    "#F8F9FA",
+    "10":   "#EBF3FB",
 }
 
 EVENTS = [

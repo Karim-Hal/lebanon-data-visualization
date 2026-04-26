@@ -9,11 +9,11 @@ COLORS = {
     "steel_blue":  "#2E74B5",
     "teal":        "#1F7A8C",
     "warning":     "#E36C09",
-    "ipc_phase_1": "#C8E6C9",
-    "ipc_phase_2": "#FFF9C4",
-    "ipc_phase_3": "#FFC000",
-    "ipc_phase_4": "#E36C09",
-    "ipc_phase_5": "#C00000",
+    "ipc_phase_1": "#8ac926",   # PALETTE green  — minimal
+    "ipc_phase_2": "#ffca3a",   # PALETTE amber  — stressed
+    "ipc_phase_3": "#E36C09",   # PALETTE/COLORS orange — crisis
+    "ipc_phase_4": "#ff595e",   # PALETTE coral red — emergency
+    "ipc_phase_5": "#C00000",   # COLORS crisis_red — famine
     "bg":          "#F8F9FA",
     "card_bg":     "#EBF3FB",
 }

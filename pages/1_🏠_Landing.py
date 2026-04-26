@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from src.config import COLORS, EVENTS
+from src.config import COLORS, EVENTS, PALETTE
 from src.data_loader import load_exchange_rate, load_ipc_population_groups, load_wdi
 from src.metrics import (
     gdp_contraction,
@@ -38,55 +38,57 @@ st.markdown(
     f"""
     <style>
         .kpi-card {{
-            background: {COLORS['card_bg']};
-            border-left: 5px solid {COLORS['deep_navy']};
+            border-left: 5px solid;
             border-radius: 6px;
             padding: 20px 24px;
             height: 130px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            background: {COLORS['card_bg']};
         }}
-        .kpi-card.red {{ border-left-color: {COLORS['crisis_red']}; }}
-        .kpi-card.orange {{ border-left-color: {COLORS['warning']}; }}
         .kpi-label {{
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 12px;
+            font-weight: 700;
             color: {COLORS['deep_navy']};
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.06em;
         }}
         .kpi-value {{
             font-size: 38px;
-            font-weight: 700;
+            font-weight: 800;
             line-height: 1;
         }}
         .kpi-sub {{
             font-size: 11px;
-            color: #666;
+            color: #888;
             margin-top: 4px;
         }}
-        .timeline-event {{
-            background: {COLORS['card_bg']};
+        .section-label {{
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #999;
+            margin-bottom: 12px;
+        }}
+        .act-card {{
+            border-left: 4px solid;
             border-radius: 6px;
-            padding: 16px 18px;
-            text-align: center;
-            height: 100%;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            background: {COLORS['card_bg']};
         }}
-        .timeline-dot {{
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-bottom: 8px;
-        }}
-        .section-header {{
-            font-size: 13px;
+        .act-title {{
+            font-size: 14px;
             font-weight: 700;
             color: {COLORS['deep_navy']};
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
             margin-bottom: 4px;
+        }}
+        .act-desc {{
+            font-size: 12px;
+            color: #555;
+            line-height: 1.55;
         }}
     </style>
     """,
@@ -101,23 +103,23 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown(
-    "<p style='color:#555;font-size:15px;margin-top:0'>A decade of economic collapse, food insecurity, and deteriorating health outcomes (2012–2026)</p>",
+    f"<p style='color:#666;font-size:15px;margin-top:0'>A decade of economic collapse, food insecurity, and deteriorating health outcomes &nbsp;·&nbsp; 2012–2026</p>",
     unsafe_allow_html=True,
 )
 st.markdown("---")
 
 # ---------------------------------------------------------------------------
-# KPI cards
+# KPI cards — four crisis indicators
 # ---------------------------------------------------------------------------
 c1, c2, c3, c4 = st.columns(4)
 
 with c1:
     st.markdown(
         f"""
-        <div class="kpi-card red">
+        <div class="kpi-card" style="border-left-color:{PALETTE[0]}">
             <div class="kpi-label">Peak Annual Inflation</div>
             <div>
-                <div class="kpi-value" style="color:{COLORS['crisis_red']}">{peak_inflation:.1f}%</div>
+                <div class="kpi-value" style="color:{PALETTE[0]}">{peak_inflation:.1f}%</div>
                 <div class="kpi-sub">Lebanon consumer prices, peak year</div>
             </div>
         </div>
@@ -128,10 +130,10 @@ with c1:
 with c2:
     st.markdown(
         f"""
-        <div class="kpi-card red">
-            <div class="kpi-label">GDP Contraction 2018→2023</div>
+        <div class="kpi-card" style="border-left-color:{PALETTE[0]}">
+            <div class="kpi-label">GDP Contraction 2018 → 2023</div>
             <div>
-                <div class="kpi-value" style="color:{COLORS['crisis_red']}">{gdp_drop:.0%}</div>
+                <div class="kpi-value" style="color:{PALETTE[0]}">{gdp_drop:.0%}</div>
                 <div class="kpi-sub">Share of GDP lost in five years</div>
             </div>
         </div>
@@ -142,10 +144,10 @@ with c2:
 with c3:
     st.markdown(
         f"""
-        <div class="kpi-card orange">
+        <div class="kpi-card" style="border-left-color:{PALETTE[1]}">
             <div class="kpi-label">Lebanese in IPC Phase 3+</div>
             <div>
-                <div class="kpi-value" style="color:{COLORS['warning']}">{phase3_pct:.0%}</div>
+                <div class="kpi-value" style="color:{PALETTE[1]}">{phase3_pct:.0%}</div>
                 <div class="kpi-sub">Lebanese residents · {latest_ipc_date} snapshot</div>
             </div>
         </div>
@@ -156,10 +158,10 @@ with c3:
 with c4:
     st.markdown(
         f"""
-        <div class="kpi-card">
+        <div class="kpi-card" style="border-left-color:{PALETTE[3]}">
             <div class="kpi-label">LBP per USD (Unofficial)</div>
             <div>
-                <div class="kpi-value" style="color:{COLORS['deep_navy']}">{lbp_rate:,.0f}</div>
+                <div class="kpi-value" style="color:{PALETTE[3]}">{lbp_rate:,.0f}</div>
                 <div class="kpi-sub">Unofficial parallel rate · {latest_fx_date}</div>
             </div>
         </div>
@@ -172,24 +174,19 @@ st.markdown("<div style='margin-top:32px'></div>", unsafe_allow_html=True)
 # ---------------------------------------------------------------------------
 # Crisis timeline
 # ---------------------------------------------------------------------------
-st.markdown(
-    f"<div class='section-header'>Crisis Timeline</div>",
-    unsafe_allow_html=True,
-)
+st.markdown('<div class="section-label">Crisis Timeline</div>', unsafe_allow_html=True)
 
 event_colors = {
-    "warning":    COLORS["warning"],
-    "crisis_red": COLORS["crisis_red"],
+    "warning":    PALETTE[1],
+    "crisis_red": PALETTE[0],
 }
 
-# Build a horizontal Plotly timeline
 event_dates  = [pd.Timestamp(e[0]) for e in EVENTS]
 event_labels = [e[1] for e in EVENTS]
 event_clrs   = [event_colors[e[2]] for e in EVENTS]
 
 fig_timeline = go.Figure()
 
-# Baseline axis line
 fig_timeline.add_shape(
     type="line",
     x0=pd.Timestamp("2019-01-01"), x1=pd.Timestamp("2022-01-01"),
@@ -197,7 +194,6 @@ fig_timeline.add_shape(
     line=dict(color=COLORS["deep_navy"], width=2),
 )
 
-# Event dots and annotations
 for dt, label, color in zip(event_dates, event_labels, event_clrs):
     fig_timeline.add_trace(go.Scatter(
         x=[dt], y=[0],
@@ -237,46 +233,75 @@ fig_timeline.update_layout(
 
 st.plotly_chart(fig_timeline, use_container_width=True)
 
-# ---------------------------------------------------------------------------
-# Context paragraph
-# ---------------------------------------------------------------------------
 st.markdown("---")
-col_l, col_r = st.columns([2, 1])
 
-with col_l:
+# ---------------------------------------------------------------------------
+# About + story navigation
+# ---------------------------------------------------------------------------
+col_about, col_gap, col_acts = st.columns([3, 0.3, 2.5])
+
+with col_about:
     st.markdown(
         f"""
-        <h3 style="color:{COLORS['deep_navy']}">About this dashboard</h3>
-        <p style="font-size:14px;line-height:1.7;color:#333">
+        <div class="section-label">About this dashboard</div>
+        <p style="font-size:14px;line-height:1.8;color:#333;margin-top:0">
         Lebanon experienced one of the world's most severe economic collapses of the modern era.
-        A banking sector crisis in October 2019, compounded by the Beirut port explosion in August 2020
+        A banking-sector crisis in <b style="color:{PALETTE[1]}">October 2019</b>,
+        compounded by the <b style="color:{PALETTE[0]}">Beirut port explosion</b> in August 2020
         and the removal of fuel and food subsidies in 2021, triggered a cascading humanitarian emergency.
-        The Lebanese pound lost over 98% of its value against the US dollar, while consumer prices
-        rose more than 200% in a single year. The ripple effects — food insecurity, child malnutrition,
-        and deteriorating health outcomes — are the subject of this dashboard.
+        The Lebanese pound lost over <b>98%</b> of its value against the US dollar,
+        while consumer prices rose more than <b>200%</b> in a single year.
         </p>
-        <p style="font-size:13px;color:#888">
-        <b>Data sources:</b> WFP VAM Food Prices · World Bank WDI · IPC Global Platform · WHO GHO
+        <p style="font-size:14px;line-height:1.8;color:#333">
+        The ripple effects — surging food prices, widespread food insecurity, child malnutrition,
+        and deteriorating health outcomes — are the subject of this five-act narrative.
+        </p>
+        <p style="font-size:12px;color:#aaa;margin-top:16px">
+            <b style="color:#888">Data sources</b>&nbsp;·&nbsp;
+            WFP VAM Food Prices &nbsp;·&nbsp; World Bank WDI &nbsp;·&nbsp;
+            IPC Global Platform &nbsp;·&nbsp; WHO Global Health Observatory
         </p>
         """,
         unsafe_allow_html=True,
     )
 
-with col_r:
-    st.markdown(
-        f"""
-        <div style="background:{COLORS['card_bg']};border-radius:8px;padding:20px">
-            <div style="font-size:12px;font-weight:700;color:{COLORS['deep_navy']};
-                        text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px">
-                Navigate the story
+with col_acts:
+    st.markdown('<div class="section-label">Navigate the story</div>', unsafe_allow_html=True)
+
+    acts = [
+        (
+            "📉", "Act 1 — The Macro Shock", PALETTE[0],
+            "How Lebanon's economy unravelled: GDP fell by over 60%, inflation peaked above 200%, "
+            "and the official exchange rate diverged sharply from the black market. Compare Lebanon's "
+            "trajectory against five regional peers — Jordan, Egypt, Syria, Saudi Arabia, and the UAE.",
+        ),
+        (
+            "🛒", "Act 2 — Food Price Transmission", PALETTE[1],
+            "How the macro shock passed directly into household food costs. Track six staple commodities "
+            "on a 2019=100 index, watch LBP and USD prices diverge, and see how closely the unofficial "
+            "exchange rate predicts basket prices.",
+        ),
+        (
+            "🗺️", "Act 2 Ext. — Who Suffers Most", PALETTE[2],
+            "IPC food insecurity phases broken down by governorate and by population group. "
+            "Which regions are deepest in crisis? How do Lebanese residents, Syrian refugees, "
+            "and Palestinian refugees differ in exposure?",
+        ),
+        (
+            "🏥", "Act 3 — The Health Toll", PALETTE[4],
+            "The delayed human cost: stunting, wasting, anaemia, and infant mortality plotted "
+            "against food price trends with a lagged overlay. Nutrition indicators worsen "
+            "years after the price shock — the crisis is still unfolding.",
+        ),
+    ]
+
+    for icon, title, color, desc in acts:
+        st.markdown(
+            f"""
+            <div class="act-card" style="border-left-color:{color}">
+                <div class="act-title">{icon} {title}</div>
+                <div class="act-desc">{desc}</div>
             </div>
-            <div style="font-size:13px;line-height:2;color:#333">
-                📉 <b>Act 1</b> — The Macro Shock<br>
-                🛒 <b>Act 2</b> — Food Price Transmission<br>
-                🗺️ <b>Act 2 ext.</b> — Who Suffers Most<br>
-                🏥 <b>Act 3</b> — The Health Toll
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            """,
+            unsafe_allow_html=True,
+        )

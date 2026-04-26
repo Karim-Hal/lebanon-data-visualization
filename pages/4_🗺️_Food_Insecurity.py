@@ -303,7 +303,7 @@ else:
         x=gov_price["usdprice"],
         y=gov_price["admin1"],
         orientation="h",
-        marker_color=COLORS["steel_blue"],
+        marker_color="#1982c4",  # PALETTE blue
         hovertemplate="<b>%{y}</b><br>Avg USD: $%{x:.2f}<extra></extra>",
     ))
     fig_gov.update_layout(
