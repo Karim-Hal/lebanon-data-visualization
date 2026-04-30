@@ -557,7 +557,7 @@ def _fig_choropleth(geo_snap):
         kj["gov"] = "Keserwan-Jbeil"
         choro_df = pd.concat([choro_df, kj], ignore_index=True)
 
-    fig = px.choropleth(
+    fig = px.choropleth_map(
         choro_df, geojson=geojson,
         locations="gov", featureidkey="properties.shapeName",
         color="phase3_pct_display",
@@ -568,11 +568,14 @@ def _fig_choropleth(geo_snap):
             [1,   COLORS["ipc_phase_5"]],
         ],
         range_color=(0, 60),
+        map_style="carto-positron",
+        center={"lat": 33.85, "lon": 35.86},
+        zoom=7,
+        opacity=0.75,
         labels={"phase3_pct_display": "Phase 3+ (%)"},
         hover_name="gov",
         hover_data={"gov": False, "phase3_pct_display": True},
     )
-    fig.update_geos(fitbounds="locations", visible=False)
     fig.update_layout(**_BASE, height=440, margin=dict(l=0, r=0, t=0, b=0),
                       coloraxis_colorbar=dict(title="Phase 3+%", ticksuffix="%", len=0.7))
     return fig.to_json()
