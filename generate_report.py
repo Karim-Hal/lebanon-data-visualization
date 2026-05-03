@@ -203,6 +203,48 @@ CSS = (
     "padding-top:16px;border-top:1px solid var(--border);"
     "}"
 
+    ".filter-bar{"
+    "background:white;border-radius:8px;padding:14px 18px;"
+    "margin-bottom:18px;border:1px solid var(--border);"
+    "display:flex;flex-wrap:wrap;gap:14px;align-items:center;"
+    "}"
+    ".filter-group{display:flex;align-items:center;gap:10px;flex-wrap:wrap}"
+    ".filter-label{"
+    "font-size:9px;font-weight:700;letter-spacing:0.12em;"
+    "text-transform:uppercase;color:var(--muted);white-space:nowrap;"
+    "}"
+    ".comm-checks{display:flex;flex-wrap:wrap;gap:8px}"
+    ".comm-lbl{"
+    "font-size:11px;color:var(--navy);cursor:pointer;"
+    "display:flex;align-items:center;gap:5px;"
+    "padding:4px 10px;border-radius:4px;"
+    "border:1px solid var(--border);transition:background .15s;"
+    "user-select:none;"
+    "}"
+    ".comm-lbl.checked{background:var(--card-bg);border-color:var(--navy);font-weight:600}"
+    ".comm-lbl input[type=checkbox]{accent-color:var(--navy);margin:0;cursor:pointer}"
+    ".flt-select{"
+    "font-size:12px;padding:5px 8px;"
+    "border:1px solid var(--border);border-radius:4px;"
+    "color:var(--navy);background:white;cursor:pointer;"
+    "}"
+    ".ipc-btns{display:flex;flex-wrap:wrap;gap:6px}"
+    ".ipc-btn{"
+    "font-size:11px;font-weight:500;padding:5px 12px;"
+    "border:1px solid var(--border);border-radius:20px;"
+    "background:white;color:var(--muted);cursor:pointer;transition:all .15s;"
+    "}"
+    ".ipc-btn:hover{border-color:var(--navy);color:var(--navy)}"
+    ".ipc-btn.active{background:var(--navy);color:white;border-color:var(--navy)}"
+    ".health-pills{display:flex;flex-wrap:wrap;gap:8px}"
+    ".health-pill{"
+    "font-size:11px;font-weight:500;padding:5px 14px;"
+    "border:1.5px solid var(--border);border-radius:20px;"
+    "background:white;color:var(--muted);cursor:pointer;transition:all .15s;"
+    "}"
+    ".health-pill:hover{border-color:var(--navy);color:var(--navy)}"
+    ".health-pill.active{background:var(--card-bg);color:var(--navy);border-color:var(--navy);font-weight:600}"
+
     "::-webkit-scrollbar{width:6px;height:6px}"
     "::-webkit-scrollbar-track{background:transparent}"
     "::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}"
@@ -250,6 +292,166 @@ PLOTLY_RENDER_JS = (
     "})();"
 )
 
+INTERACTIVE_JS = (
+    "(function(){"
+    # Capture initial layouts once Plotly has rendered everything
+    "var LAYS={};"
+    '["price_index","lbp_usd","ipc_bar","gov_bar"].forEach(function(id){'
+    'var el=document.getElementById("plot-"+id);'
+    "if(el&&el.layout)LAYS[id]=JSON.parse(JSON.stringify(el.layout));"
+    "});"
+
+    # ── Food filters ──────────────────────────────────────────────────────────
+    'var fe=document.getElementById("food-data");'
+    "if(!fe)return;"
+    "var FOOD=JSON.parse(fe.textContent);"
+    "function getYrs(){"
+    'var a=document.getElementById("yr-min"),b=document.getElementById("yr-max");'
+    "return a&&b?[+a.value,+b.value]:[2012,2026];"
+    "}"
+    "function getComms(){"
+    'return Array.from(document.querySelectorAll(".comm-cb:checked")).map(function(c){return c.value;});'
+    "}"
+    "function updatePriceIndex(){"
+    "var comms=getComms(),yrs=getYrs();"
+    "var traces=comms.map(function(comm){"
+    "var pts=(FOOD.byComm[comm]||[]).filter(function(p){"
+    "var y=+p.ym.slice(0,4);return y>=yrs[0]&&y<=yrs[1];"
+    "});"
+    "return {"
+    "x:pts.map(function(p){return p.ym;}),"
+    "y:pts.map(function(p){return p.idx;}),"
+    'type:"scatter",mode:"lines",name:comm,'
+    'line:{color:FOOD.palette[comm]||"#888",width:2},'
+    'hovertemplate:"<b>%{x}</b><br>"+comm+": %{y:.1f}<extra></extra>"'
+    "};"
+    "});"
+    'var div=document.getElementById("plot-price_index");'
+    "if(div)Plotly.react(div,traces,LAYS.price_index||div.layout);"
+    "}"
+    "function updateLbpUsd(){"
+    "var yrs=getYrs();"
+    "function filt(arr){return arr.filter(function(p){var y=+p.ym.slice(0,4);return y>=yrs[0]&&y<=yrs[1];});}"
+    "var lbp=filt(FOOD.basket.lbp),usd=filt(FOOD.basket.usd);"
+    "var traces=["
+    '{x:lbp.map(function(p){return p.ym;}),y:lbp.map(function(p){return p.price;}),'
+    'type:"scatter",mode:"lines",name:"LBP price",yaxis:"y",'
+    'line:{color:"#C00000",width:2.5},'
+    'hovertemplate:"<b>%{x}</b><br>LBP: %{y:,.0f}<extra></extra>"},'
+    '{x:usd.map(function(p){return p.ym;}),y:usd.map(function(p){return p.usdprice;}),'
+    'type:"scatter",mode:"lines",name:"USD price",yaxis:"y2",'
+    'line:{color:"#2E74B5",width:2.5,dash:"dot"},'
+    'hovertemplate:"<b>%{x}</b><br>USD: $%{y:.2f}<extra></extra>"}'
+    "];"
+    'var div=document.getElementById("plot-lbp_usd");'
+    "if(div)Plotly.react(div,traces,LAYS.lbp_usd||div.layout);"
+    "}"
+    "function onFoodChange(){updatePriceIndex();updateLbpUsd();}"
+    # Commodity checkbox listeners + checked-class init
+    'document.querySelectorAll(".comm-cb").forEach(function(cb){'
+    "if(cb.checked)cb.closest(\"label\").classList.add(\"checked\");"
+    "cb.addEventListener(\"change\",function(){"
+    "cb.closest(\"label\").classList.toggle(\"checked\",cb.checked);"
+    "onFoodChange();"
+    "});"
+    "});"
+    # Year range listeners
+    '["yr-min","yr-max"].forEach(function(id){'
+    'var el=document.getElementById(id);if(el)el.addEventListener("change",onFoodChange);'
+    "});"
+
+    # ── IPC snapshot filter ───────────────────────────────────────────────────
+    'var ie=document.getElementById("ipc-data");'
+    "if(!ie)return;"
+    "var IPC=JSON.parse(ie.textContent);"
+    "function updateIPC(dateKey){"
+    "var data=IPC.byDate[dateKey];if(!data)return;"
+    # Update active button and snap label
+    'document.querySelectorAll(".ipc-btn").forEach(function(b){'
+    'b.classList.toggle("active",b.dataset.date===dateKey);'
+    "});"
+    'var sl=document.getElementById("ipc-snap-label");'
+    "if(sl){"
+    'var d=new Date(dateKey+"T00:00:00");'
+    'sl.textContent=d.toLocaleDateString("en-US",{month:"long",year:"numeric"});'
+    "}"
+    # Choropleth: restyle z and locations only (keeps geojson intact)
+    'var cd=document.getElementById("plot-choropleth");'
+    "if(cd)Plotly.restyle(cd,{z:[data.choro.z],locations:[data.choro.locations]},[0]);"
+    # IPC stacked bar
+    'var bd=document.getElementById("plot-ipc_bar");'
+    "if(bd){"
+    "var ipcTraces=data.ipcBar.phases.map(function(ph){"
+    'return {type:"bar",name:ph.name,x:data.ipcBar.govs,y:ph.y,'
+    'marker:{color:ph.color,line:{width:0}},'
+    'hovertemplate:"<b>%{x}</b><br>"+ph.name+": %{y:.1f}%<extra></extra>"};'
+    "});"
+    "Plotly.react(bd,ipcTraces,LAYS.ipc_bar||bd.layout);"
+    "}"
+    # Gov basket price bar
+    'var gd=document.getElementById("plot-gov_bar");'
+    "if(gd){"
+    "var govTraces=data.govBar.govs.length?[{"
+    'type:"bar",orientation:"h",'
+    "x:data.govBar.y,y:data.govBar.govs,"
+    'marker:{color:"#1982c4"},'
+    'hovertemplate:"<b>%{y}</b><br>Avg USD: $%{x:.2f}<extra></extra>"}]:[];'
+    "var gl=JSON.parse(JSON.stringify(LAYS.gov_bar||gd.layout));"
+    "Plotly.react(gd,govTraces,gl);"
+    # Update gov-bar year label in HTML
+    'var gy=document.getElementById("gov-bar-year");'
+    "if(gy)gy.textContent=data.year;"
+    "}"
+    "}"
+    # IPC button click listeners
+    'document.querySelectorAll(".ipc-btn").forEach(function(btn){'
+    'btn.addEventListener("click",function(){updateIPC(btn.dataset.date);});'
+    "});"
+
+    # ── Health indicator explorer ─────────────────────────────────────────────
+    'var he=document.getElementById("health-data");'
+    "if(!he)return;"
+    "var HEALTH=JSON.parse(he.textContent);"
+    "function updateHealthExplorer(){"
+    'var codes=Array.from(document.querySelectorAll(".health-pill.active")).map(function(p){return p.dataset.code;});'
+    'var div=document.getElementById("plot-health_explorer");'
+    "if(!div)return;"
+    "if(!codes.length){"
+    'Plotly.react(div,[],{paper_bgcolor:"#FFF",plot_bgcolor:"#FFF",height:300,'
+    'font:{family:"DM Sans, sans-serif",color:"#1F3864"},'
+    'annotations:[{text:"Select at least one indicator above",'
+    'x:0.5,y:0.5,xref:"paper",yref:"paper",'
+    'showarrow:false,font:{size:14,color:"#6B7280",family:"DM Sans, sans-serif"}}]});'
+    "return;}"
+    "var traces=codes.map(function(code){"
+    "var ind=HEALTH.indicators[code];if(!ind)return null;"
+    "var baseIdx=ind.years.indexOf(2000);"
+    "var base=baseIdx>=0?ind.values[baseIdx]:ind.values[0];"
+    "var norm=base>0?ind.values.map(function(v){return+(v/base*100).toFixed(2);}):ind.values.slice();"
+    'return {x:ind.years,y:norm,type:"scatter",mode:"lines+markers",name:ind.name,'
+    'line:{color:ind.color,width:2},marker:{size:5,color:ind.color},'
+    'hovertemplate:"<b>%{x}</b><br>"+ind.name+": %{y:.1f} (2000=100)<extra></extra>"};'
+    "}).filter(Boolean);"
+    "var layout={"
+    'paper_bgcolor:"#FFFFFF",plot_bgcolor:"#FFFFFF",'
+    'font:{family:"DM Sans, sans-serif",color:"#1F3864",size:12},'
+    "height:380,margin:{l:60,r:20,t:20,b:48},"
+    'hovermode:"x unified",'
+    'legend:{orientation:"h",yanchor:"bottom",y:1.02,xanchor:"left",x:0},'
+    'xaxis:{title:"Year",dtick:5,showgrid:false},'
+    'yaxis:{title:"Index (2000 = 100)",gridcolor:"#EEF1F5"},'
+    'shapes:[{type:"line",x0:0,x1:1,y0:100,y1:100,xref:"paper",yref:"y",'
+    'line:{color:"#D0D0D0",width:1.5,dash:"dot"}}]'
+    "};"
+    "Plotly.react(div,traces,layout,{responsive:true,displaylogo:false,displayModeBar:true});"
+    "}"
+    'document.querySelectorAll(".health-pill").forEach(function(pill){'
+    'pill.addEventListener("click",function(){pill.classList.toggle("active");updateHealthExplorer();});'
+    "});"
+    "updateHealthExplorer();"
+    "})();"
+)
+
 
 def _plot_tag(fig_id, fig_json):
     return (
@@ -279,6 +481,7 @@ def build_html(body):
         + body + "\n"
         "<script>" + NAV_JS + "</script>\n"
         "<script>" + PLOTLY_RENDER_JS + "</script>\n"
+        "<script>" + INTERACTIVE_JS + "</script>\n"
         "</body>\n"
         "</html>"
     )
@@ -421,7 +624,24 @@ def _html_gdp_table(wdi):
     )
 
 
+def _rebase_price_index(prices):
+    """Return prices with price_index filled for commodities missing 2019 data."""
+    df = prices.copy()
+    for comm in BASKET:
+        mask = df["commodity"] == comm
+        if not mask.any():
+            continue
+        if df.loc[mask, "price_index"].isna().all():
+            for yr in range(2019, 2028):
+                base = df.loc[mask & (df["date"].dt.year == yr), "usdprice"].mean()
+                if pd.notna(base) and base > 0:
+                    df.loc[mask, "price_index"] = df.loc[mask, "usdprice"] / base * 100
+                    break
+    return df
+
+
 def _fig_price_index(prices):
+    prices = _rebase_price_index(prices)
     df = (
         prices[prices["commodity"].isin(BASKET)]
         .groupby(["date", "commodity"], as_index=False)["price_index"]
@@ -930,6 +1150,156 @@ def _fig_mena(u5mort):
 
 
 # =============================================================================
+# Health indicator registry (used by data builder + section renderer)
+# =============================================================================
+
+_ALL_HEALTH_INDICATORS = [
+    ("Stunting (%)",           "NUTSTUNTINGPREV",                    "#ff595e"),
+    ("Anaemia – Children","NUTRITION_ANAEMIA_CHILDREN_PREV",    "#ffca3a"),
+    ("Infant Mortality",       "MDG_0000000001",                     "#1982c4"),
+    ("Under-5 Mortality",      "MDG_0000000007",                     "#6a4c93"),
+    ("Wasting (%)",            "NUTRITION_WH_2",                     "#8ac926"),
+    ("Underweight (%)",        "NUTRITION_WA_2",                     "#46dff7"),
+    ("Neonatal Mortality",     "WHOSIS_000003",                      "#ff89a6"),
+]
+_INITIAL_ACTIVE = {"NUTSTUNTINGPREV", "NUTRITION_ANAEMIA_CHILDREN_PREV",
+                   "MDG_0000000001", "MDG_0000000007"}
+
+
+# =============================================================================
+# Raw-data builders (embed JSON for JS-driven filters)
+# =============================================================================
+
+def _build_food_data(prices, basket):
+    prices = _rebase_price_index(prices)
+    df = (
+        prices[prices["commodity"].isin(BASKET)]
+        .groupby(["date", "commodity"], as_index=False)["price_index"]
+        .mean()
+        .sort_values("date")
+    )
+    df["ym"] = df["date"].dt.strftime("%Y-%m")
+
+    commodities = sorted(BASKET)
+    palette = {c: PALETTE[i % len(PALETTE)] for i, c in enumerate(commodities)}
+
+    by_comm = {}
+    for comm in BASKET:
+        sub = df[df["commodity"] == comm][["ym", "price_index"]].dropna()
+        by_comm[comm] = [
+            {"ym": row["ym"], "idx": round(float(row["price_index"]), 2)}
+            for _, row in sub.iterrows()
+        ]
+
+    all_years = sorted(int(y) for y in df["date"].dt.year.unique())
+
+    lbp_m = monthly_basket_lbp(basket)
+    usd_m = monthly_basket_usd(basket)
+    lbp_data = [{"ym": r["year_month"], "price": round(float(r["price"]), 2)}
+                for _, r in lbp_m.iterrows()]
+    usd_data = [{"ym": r["year_month"], "usdprice": round(float(r["usdprice"]), 4)}
+                for _, r in usd_m.iterrows()]
+
+    return json.dumps({
+        "commodities": commodities,
+        "palette": palette,
+        "byComm": by_comm,
+        "basket": {"lbp": lbp_data, "usd": usd_data},
+        "years": all_years,
+    })
+
+
+def _build_ipc_data(ipc_geo, prices):
+    geo = ipc_geo.copy()
+    geo["gov"] = geo["admin1_normalized"].map(_IPC_TO_GOV)
+
+    unique_dates = sorted(geo["analysis_date"].dt.strftime("%Y-%m-%d").unique())
+    by_date = {}
+
+    for date_str in unique_dates:
+        date_ts = pd.Timestamp(date_str)
+        snap = geo[geo["analysis_date"] == date_ts].copy()
+
+        # Choropleth: gov -> phase3+ pct
+        choro_df = (
+            snap.dropna(subset=["gov"])
+            .groupby("gov", as_index=False)
+            .agg(phase3_pct=("Phase 3+ percentage current", "mean"))
+        )
+        choro_df["z"] = (choro_df["phase3_pct"] * 100).round(1)
+        ml_row = choro_df[choro_df["gov"] == "Mount Lebanon"]
+        if not ml_row.empty:
+            kj = ml_row.copy(); kj["gov"] = "Keserwan-Jbeil"
+            choro_df = pd.concat([choro_df, kj], ignore_index=True)
+
+        # IPC bar: stacked phases per gov
+        agg_cols = {col: "mean" for col, _ in _PHASE_COLS.values()}
+        bar_df = (
+            snap.dropna(subset=["gov"])
+            .groupby("gov", as_index=False)
+            .agg(agg_cols)
+        )
+        bar_df["phase3plus"] = bar_df[[
+            "Phase 3 percentage current",
+            "Phase 4 percentage current",
+            "Phase 5 percentage current",
+        ]].sum(axis=1)
+        bar_df = bar_df.sort_values("phase3plus", ascending=False)
+
+        phases = [
+            {"name": pname, "color": color,
+             "y": [round(float(v) * 100, 1) for v in bar_df[col].fillna(0)]}
+            for pname, (col, color) in _PHASE_COLS.items()
+        ]
+
+        # Gov basket bar for this year
+        yr = date_ts.year
+        yr_p = prices[prices["commodity"].isin(BASKET) & (prices["date"].dt.year == yr)]
+        if not yr_p.empty:
+            gp = yr_p.groupby("admin1")["usdprice"].mean().reset_index()
+            gp = gp.sort_values("usdprice", ascending=True)
+            gov_bar = {"govs": gp["admin1"].tolist(),
+                       "y": [round(float(v), 2) for v in gp["usdprice"]]}
+        else:
+            gov_bar = {"govs": [], "y": []}
+
+        def _clean(v):
+            return None if (v is None or (isinstance(v, float) and (v != v))) else v
+
+        by_date[date_str] = {
+            "choro": {
+                "locations": choro_df["gov"].tolist(),
+                "z": [_clean(v) for v in choro_df["z"].tolist()],
+            },
+            "ipcBar": {"govs": bar_df["gov"].tolist(), "phases": phases},
+            "govBar": gov_bar,
+            "year": yr,
+        }
+
+    return json.dumps({"dates": unique_dates, "byDate": by_date})
+
+
+def _build_health_data(health):
+    h = _btsx(health)
+    indicators = {}
+    for name, code, color in _ALL_HEALTH_INDICATORS:
+        dfc = (
+            h[h["GHO (CODE)"] == code][["YEAR (DISPLAY)", "Numeric"]]
+            .dropna()
+            .groupby("YEAR (DISPLAY)", as_index=False)["Numeric"].mean()
+            .sort_values("YEAR (DISPLAY)")
+        )
+        if dfc.empty:
+            continue
+        indicators[code] = {
+            "name": name, "color": color,
+            "years": [int(y) for y in dfc["YEAR (DISPLAY)"]],
+            "values": [round(float(v), 3) for v in dfc["Numeric"]],
+        }
+    return json.dumps({"indicators": indicators})
+
+
+# =============================================================================
 # Section renderers
 # =============================================================================
 
@@ -1038,6 +1408,43 @@ def _section_food(d):
     idx_json             = _fig_price_index(prices)
     lbp_usd_json         = _fig_lbp_usd(basket)
     scat_json, r, r2, n  = _fig_scatter(basket, exrate)
+    food_json            = _build_food_data(prices, basket)
+
+    # Year range options
+    all_years = sorted(int(y) for y in
+                       prices[prices["commodity"].isin(BASKET)]["date"].dt.year.unique())
+    yr_min, yr_max = all_years[0], all_years[-1]
+    yr_min_opts = "".join(
+        '<option value="' + str(y) + '"' + (' selected' if y == yr_min else '') + '>'
+        + str(y) + '</option>' for y in all_years)
+    yr_max_opts = "".join(
+        '<option value="' + str(y) + '"' + (' selected' if y == yr_max else '') + '>'
+        + str(y) + '</option>' for y in all_years)
+
+    # Commodity checkboxes
+    comm_checks = ""
+    for comm in sorted(BASKET):
+        short = comm.split("(")[0].strip() if "(" in comm else comm
+        comm_checks += (
+            '<label class="comm-lbl">'
+            '<input type="checkbox" class="comm-cb" value="' + comm + '" checked> '
+            + short + '</label>'
+        )
+
+    filter_bar = (
+        '<div class="filter-bar">'
+        '<div class="filter-group">'
+        '<span class="filter-label">Commodities</span>'
+        '<div class="comm-checks">' + comm_checks + '</div>'
+        '</div>'
+        '<div class="filter-group">'
+        '<span class="filter-label">Year Range</span>'
+        '<select id="yr-min" class="flt-select">' + yr_min_opts + '</select>'
+        '<span style="font-size:11px;color:var(--muted)">to</span>'
+        '<select id="yr-max" class="flt-select">' + yr_max_opts + '</select>'
+        '</div>'
+        '</div>'
+    )
 
     callout = (
         '<div class="callout">'
@@ -1056,6 +1463,7 @@ def _section_food(d):
 
     return (
         '<section id="s-food">'
+        '<script type="application/json" id="food-data">' + food_json + '</script>'
         '<div class="section-meta">'
         '<span class="section-tag">Act 2</span>'
         '<span class="section-eyebrow">2012 &ndash; 2026</span>'
@@ -1066,12 +1474,15 @@ def _section_food(d):
         '<div class="chart-card">'
         '<div class="chart-title">Commodity Price Index (2019 = 100)</div>'
         '<div class="chart-caption">Monthly average price index per basket commodity. '
-        'Dotted line marks the 2019 baseline. Click the legend to isolate individual commodities.</div>'
-        + _plot_tag("price_index", idx_json) +
+        'Filter by commodity and year range below. '
+        'Changes also update the LBP vs USD chart.</div>'
+        + filter_bar +
+        _plot_tag("price_index", idx_json) +
         '</div>'
         '<div class="chart-card">'
         '<div class="chart-title">Basket Price &mdash; LBP vs USD</div>'
         '<div class="chart-caption">Monthly average price of the six-item food basket. '
+        'Responds to the year range filter above. '
         'LBP price (left axis) exploded while USD price (right axis) also rose, '
         'showing real purchasing-power loss beyond currency devaluation.</div>'
         + _plot_tag("lbp_usd", lbp_usd_json) +
@@ -1107,17 +1518,44 @@ def _section_insecurity(d):
     donut_json   = _fig_donut(ipc_pop)
     ipc_bar_json = _fig_ipc_bar(geo_snap)
     gov_bar_json = _fig_gov_bar(prices, selected_year)
+    ipc_data_json = _build_ipc_data(d["ipc_geo"], prices)
+
+    # Date buttons — one per unique snapshot
+    unique_dates = sorted(d["ipc_geo"]["analysis_date"].unique())
+    date_buttons = ""
+    for dt in unique_dates:
+        ts = pd.Timestamp(dt)
+        date_str = ts.strftime("%Y-%m-%d")
+        label    = ts.strftime("%b %Y")
+        active   = ts == latest_date
+        date_buttons += (
+            '<button class="ipc-btn' + (' active' if active else '') + '" '
+            'data-date="' + date_str + '">' + label + '</button>'
+        )
+
+    ipc_filter = (
+        '<div class="filter-bar">'
+        '<div class="filter-group">'
+        '<span class="filter-label">Snapshot Date</span>'
+        '<div class="ipc-btns">' + date_buttons + '</div>'
+        '</div>'
+        '<span style="font-size:11px;color:var(--muted)">'
+        'Showing: <b id="ipc-snap-label">' + snap_label + '</b>'
+        '</span>'
+        '</div>'
+    )
 
     return (
         '<section id="s-insecurity">'
+        '<script type="application/json" id="ipc-data">' + ipc_data_json + '</script>'
         '<div class="section-meta">'
         '<span class="section-tag">Act 2 Extended</span>'
         '<span class="section-eyebrow">Snapshot: ' + snap_label + '</span>'
         '</div>'
         '<h2 class="section-title">Who Suffers Most</h2>'
         '<p class="section-sub">IPC food insecurity phases broken down by governorate '
-        'and population group. Data shown for the most recent available snapshot '
-        '(' + snap_label + ').</p>'
+        'and population group. Select a snapshot date to update all charts below.</p>'
+        + ipc_filter +
         '<div class="g60">'
         '<div class="chart-card" style="margin-bottom:0">'
         '<div class="chart-title">IPC Phase 3+ by Governorate</div>'
@@ -1142,9 +1580,8 @@ def _section_insecurity(d):
         '</div>'
         '<div class="chart-card" style="margin-bottom:0">'
         '<div class="chart-title">Avg Basket Price by Governorate &mdash; '
-        + str(selected_year) + '</div>'
-        '<div class="chart-caption">Average USD price of basket commodities per governorate, '
-        + str(selected_year) + '.</div>'
+        '<span id="gov-bar-year">' + str(selected_year) + '</span></div>'
+        '<div class="chart-caption">Average USD price of basket commodities per governorate.</div>'
         + _plot_tag("gov_bar", gov_bar_json) +
         '</div>'
         '</div>'
@@ -1159,13 +1596,37 @@ def _section_health(d):
     basket = d["basket"]
     u5mort = d["u5mort"]
 
-    lag_json   = _fig_lag(basket, health)
-    multi_json = _fig_small_mult(health)
-    db_json    = _fig_dumbbell(health)
-    mena_json  = _fig_mena(u5mort)
+    lag_json    = _fig_lag(basket, health)
+    multi_json  = _fig_small_mult(health)
+    db_json     = _fig_dumbbell(health)
+    mena_json   = _fig_mena(u5mort)
+    health_json = _build_health_data(health)
+
+    # Indicator pills
+    h = _btsx(health)
+    pills = ""
+    for name, code, color in _ALL_HEALTH_INDICATORS:
+        has_data = not h[h["GHO (CODE)"] == code]["Numeric"].dropna().empty
+        if not has_data:
+            continue
+        active = code in _INITIAL_ACTIVE
+        pills += (
+            '<button class="health-pill' + (' active' if active else '') + '" '
+            'data-code="' + code + '" '
+            'style="' + ('border-color:' + color + ';background:' + color + '18;color:var(--navy);' if active else '') + '">'
+            + name + '</button>'
+        )
+
+    explorer_filter = (
+        '<div class="filter-bar">'
+        '<span class="filter-label">Indicators (toggle to compare)</span>'
+        '<div class="health-pills">' + pills + '</div>'
+        '</div>'
+    )
 
     return (
         '<section id="s-health">'
+        '<script type="application/json" id="health-data">' + health_json + '</script>'
         '<div class="section-meta">'
         '<span class="section-tag">Act 3</span>'
         '<span class="section-eyebrow">2000 &ndash; 2024</span>'
@@ -1174,6 +1635,13 @@ def _section_health(d):
         '<p class="section-sub">Stunting, wasting, anaemia, and mortality in Lebanon &mdash; '
         'with a lagged view against food price shocks. The crisis is still unfolding: '
         'nutrition indicators worsen years after the price shock.</p>'
+        '<div class="chart-card">'
+        '<div class="chart-title">Health Indicator Explorer</div>'
+        '<div class="chart-caption">All indicators normalized to 2000&nbsp;=&nbsp;100 for side-by-side '
+        'comparison. Toggle the pills to show or hide indicators.</div>'
+        + explorer_filter +
+        '<div id="plot-health_explorer" class="plot-container" style="min-height:380px"></div>'
+        '</div>'
         '<div class="chart-card">'
         '<div class="chart-title">Food Prices vs Stunting Prevalence &mdash; Lag View</div>'
         '<div class="chart-caption">Top: Monthly basket price index (2019=100) &middot; '
