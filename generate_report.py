@@ -43,6 +43,10 @@ ASSETS       = ROOT / "assets"
 GEOJSON_PATH = ASSETS / "geoBoundaries-LBN-ADM1_simplified.geojson"
 
 # -- Global Plotly style ------------------------------------------------------
+def _ecolor(key):
+    """Map EVENTS color_key to the project PALETTE."""
+    return PALETTE[0] if key == "crisis_red" else PALETTE[1]
+
 _BASE = dict(
     font=dict(family="DM Sans, sans-serif", color="#1F3864", size=12),
     paper_bgcolor="#FFFFFF",
@@ -68,7 +72,7 @@ def load_all():
 
 CSS = (
     ":root{"
-    "--navy:#1F3864;--red:#C00000;--blue:#2E74B5;"
+    "--navy:#1F3864;--red:#ff595e;--blue:#1982c4;"
     "--bg:#F4F6F9;--white:#FFFFFF;--card-bg:#EBF3FB;"
     "--muted:#6B7280;--border:#D5DCE8;"
     "--shadow:0 2px 10px rgba(31,56,100,0.08);"
@@ -543,22 +547,30 @@ def _fig_gdp_rate(wdi):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(
         x=lbn_gdp["Year"], y=lbn_gdp["gdp_bn"], name="GDP (USD bn)",
-        line=dict(color=COLORS["crisis_red"], width=2.5), mode="lines+markers",
+        line=dict(color=PALETTE[0], width=2.5), mode="lines+markers",
         marker=dict(size=5),
         hovertemplate="<b>%{x}</b><br>GDP: $%{y:.1f}B<extra></extra>",
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=lbn_fx["Year"], y=lbn_fx["Value"], name="Official LBP/USD",
-        line=dict(color=COLORS["steel_blue"], width=2.5, dash="dot"), mode="lines+markers",
+        line=dict(color=PALETTE[3], width=2.5, dash="dot"), mode="lines+markers",
         marker=dict(size=5),
         hovertemplate="<b>%{x}</b><br>Rate: %{y:,.0f} LBP/USD<extra></extra>",
     ), secondary_y=True)
 
-    for date_str, label, color_key, dash in EVENTS:
+    _stagger_y = [0.93, 0.72, 0.51]
+    for (date_str, label, color_key, dash), y_pos in zip(EVENTS, _stagger_y):
         yr = pd.Timestamp(date_str).year + (pd.Timestamp(date_str).month - 1) / 12
-        fig.add_vline(x=yr, line_dash=dash, line_color=COLORS[color_key], line_width=1.5,
-                      annotation_text=label, annotation_position="top left",
-                      annotation_font_size=10, annotation_font_color=COLORS[color_key])
+        col = _ecolor(color_key)
+        fig.add_vline(x=yr, line_dash=dash, line_color=col, line_width=1.5)
+        fig.add_annotation(
+            x=yr, y=y_pos, xref="x", yref="paper",
+            text="<b>" + label + "</b>",
+            showarrow=False,
+            font=dict(size=9, color=col, family="DM Sans, sans-serif"),
+            bgcolor="white", bordercolor=col, borderwidth=1, borderpad=4,
+            xanchor="left", xshift=5,
+        )
 
     fig.update_yaxes(title_text="GDP (USD billions)", secondary_y=False,
                      tickprefix="$", ticksuffix="B", gridcolor="#EEF1F5")
@@ -584,13 +596,13 @@ def _fig_inflation(wdi):
     )
     fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
     fig.for_each_annotation(
-        lambda a: a.update(font=dict(color=COLORS["crisis_red"], size=12, family="DM Sans, sans-serif"))
+        lambda a: a.update(font=dict(color=PALETTE[0], size=12, family="DM Sans, sans-serif"))
         if a.text == "Lebanon"
         else a.update(font=dict(color=COLORS["deep_navy"], size=11, family="DM Sans, sans-serif"))
     )
     for date_str, _, color_key, dash in EVENTS:
         yr = pd.Timestamp(date_str).year + (pd.Timestamp(date_str).month - 1) / 12
-        fig.add_vline(x=yr, line_dash=dash, line_color=COLORS[color_key], line_width=1, opacity=0.6)
+        fig.add_vline(x=yr, line_dash=dash, line_color=_ecolor(color_key), line_width=1, opacity=0.6)
     fig.update_yaxes(matches=None, showticklabels=True, ticksuffix="%", gridcolor="#EEF1F5")
     fig.update_xaxes(dtick=3, tickangle=-45, showgrid=False)
     fig.update_traces(marker=dict(size=4), line=dict(width=2))
@@ -659,11 +671,19 @@ def _fig_price_index(prices):
     fig.add_hline(y=100, line_dash="dot", line_color=COLORS["deep_navy"], line_width=1.5,
                   annotation_text="2019 baseline", annotation_position="bottom right",
                   annotation_font_size=10)
-    for date_str, label, color_key, dash in EVENTS:
-        fig.add_vline(x=pd.Timestamp(date_str).timestamp() * 1000,
-                      line_dash=dash, line_color=COLORS[color_key], line_width=1.5,
-                      annotation_text=label, annotation_position="top right",
-                      annotation_font_size=10, annotation_font_color=COLORS[color_key])
+    _stagger_y = [0.93, 0.72, 0.51]
+    for (date_str, label, color_key, dash), y_pos in zip(EVENTS, _stagger_y):
+        ts = pd.Timestamp(date_str).timestamp() * 1000
+        col = _ecolor(color_key)
+        fig.add_vline(x=ts, line_dash=dash, line_color=col, line_width=1.5)
+        fig.add_annotation(
+            x=ts, y=y_pos, xref="x", yref="paper",
+            text="<b>" + label + "</b>",
+            showarrow=False,
+            font=dict(size=9, color=col, family="DM Sans, sans-serif"),
+            bgcolor="white", bordercolor=col, borderwidth=1, borderpad=4,
+            xanchor="left", xshift=5,
+        )
     fig.update_layout(**_BASE, height=420, margin=dict(l=52, r=24, t=44, b=52),
                       hovermode="x unified",
                       legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
@@ -679,25 +699,28 @@ def _fig_lbp_usd(basket):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(
         x=lbp_m["year_month"], y=lbp_m["price"], name="LBP price",
-        line=dict(color=COLORS["crisis_red"], width=2.5),
+        line=dict(color=PALETTE[0], width=2.5),
         hovertemplate="<b>%{x}</b><br>LBP: %{y:,.0f}<extra></extra>",
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=usd_m["year_month"], y=usd_m["usdprice"], name="USD price",
-        line=dict(color=COLORS["steel_blue"], width=2.5, dash="dot"),
+        line=dict(color=PALETTE[3], width=2.5, dash="dot"),
         hovertemplate="<b>%{x}</b><br>USD: $%{y:.2f}<extra></extra>",
     ), secondary_y=True)
 
-    for date_str, label, color_key, dash in EVENTS:
+    _stagger_y = [0.93, 0.72, 0.51]
+    for (date_str, label, color_key, dash), y_pos in zip(EVENTS, _stagger_y):
         ym = pd.Timestamp(date_str).strftime("%Y-%m")
+        col = _ecolor(color_key)
         fig.add_shape(type="line", x0=ym, x1=ym, y0=0, y1=1,
                       xref="x", yref="paper",
-                      line=dict(color=COLORS[color_key], width=1.5,
+                      line=dict(color=col, width=1.5,
                                 dash="dash" if dash == "dash" else "solid"))
-        fig.add_annotation(x=ym, y=1, xref="x", yref="paper", text=label,
-                           showarrow=False, xanchor="left", yanchor="top",
-                           font=dict(size=10, color=COLORS[color_key], family="DM Sans, sans-serif"),
-                           bgcolor="rgba(255,255,255,0.7)")
+        fig.add_annotation(x=ym, y=y_pos, xref="x", yref="paper",
+                           text="<b>" + label + "</b>",
+                           showarrow=False, xanchor="left", xshift=5,
+                           font=dict(size=9, color=col, family="DM Sans, sans-serif"),
+                           bgcolor="white", bordercolor=col, borderwidth=1, borderpad=4)
 
     fig.update_yaxes(title_text="Average LBP price", secondary_y=False,
                      tickformat=",", gridcolor="#EEF1F5")
@@ -720,13 +743,13 @@ def _fig_scatter(basket, exrate):
         sdf, x="price", y="usdprice",
         trendline="ols",
         labels={"price": "Unofficial LBP/USD rate", "usdprice": "Avg basket price (USD)"},
-        color_discrete_sequence=[COLORS["steel_blue"]],
+        color_discrete_sequence=[PALETTE[3]],
         hover_data={"year_month": True, "price": ":.0f", "usdprice": ":.2f"},
     )
     fig.update_traces(selector=dict(mode="markers"),
                       marker=dict(size=8, opacity=0.7, line=dict(width=0.5, color="white")))
     fig.update_traces(selector=dict(mode="lines"),
-                      line=dict(color=COLORS["crisis_red"], width=2))
+                      line=dict(color=PALETTE[0], width=2))
     fig.add_annotation(xref="paper", yref="paper", x=0.05, y=0.95,
                        text="<b>R² = {:.3f}</b>  (r = {:.3f})".format(r2, r),
                        showarrow=False,
@@ -782,7 +805,7 @@ def _fig_choropleth(geo_snap):
         locations="gov", featureidkey="properties.shapeName",
         color="phase3_pct_display",
         color_continuous_scale=[
-            [0,   "#C8E6C9"],
+            [0,   PALETTE[2]],
             [0.3, COLORS["ipc_phase_3"]],
             [0.6, COLORS["ipc_phase_4"]],
             [1,   COLORS["ipc_phase_5"]],
@@ -965,15 +988,15 @@ def _fig_lag(basket, health):
     ), row=2, col=1)
 
     for r in [1, 2]:
-        fig.add_vrect(x0=2020, x1=2022, fillcolor=COLORS["warning"], opacity=0.08,
+        fig.add_vrect(x0=2020, x1=2022, fillcolor=PALETTE[1], opacity=0.08,
                       line_width=0, row=r, col=1)
         for yr in [2020, 2022]:
-            fig.add_vline(x=yr, line_dash="dash", line_color=COLORS["warning"],
+            fig.add_vline(x=yr, line_dash="dash", line_color=PALETTE[1],
                           line_width=1, opacity=0.6, row=r, col=1)
 
     fig.add_annotation(x=2021, y=1, xref="x", yref="paper",
                        text="Crisis window<br>2020-2022", showarrow=False,
-                       font=dict(size=10, color=COLORS["warning"], family="DM Sans, sans-serif"),
+                       font=dict(size=10, color=PALETTE[1], family="DM Sans, sans-serif"),
                        bgcolor="rgba(255,255,255,0.8)")
     fig.update_yaxes(title_text="Price Index", row=1, col=1, gridcolor="#EEF1F5")
     fig.update_yaxes(title_text="Stunting (%)", row=2, col=1, ticksuffix="%", gridcolor="#EEF1F5")
@@ -1008,7 +1031,7 @@ def _fig_small_mult(health):
         yr_max_m = int(df_m["YEAR (DISPLAY)"].max())
         if yr_min_m <= 2020 <= yr_max_m:
             fig.add_vrect(x0=2020, x1=min(2022, yr_max_m),
-                          fillcolor=COLORS["warning"], opacity=0.07, line_width=0,
+                          fillcolor=PALETTE[1], opacity=0.07, line_width=0,
                           row=row, col=col)
     fig.update_xaxes(dtick=5, showgrid=False)
     fig.update_yaxes(gridcolor="#EEF1F5")
@@ -1133,10 +1156,10 @@ def _fig_mena(u5mort):
         (2020, "Port explosion",  0.58, "left"),
         (2021, "Subsidy removal", 0.97, "left"),
     ]:
-        fig.add_vline(x=yr, line_dash="dash", line_color=COLORS["warning"], line_width=1.5)
+        fig.add_vline(x=yr, line_dash="dash", line_color=PALETTE[1], line_width=1.5)
         fig.add_annotation(x=yr, y=y_paper, xref="x", yref="paper",
                            text=lbl, showarrow=False,
-                           font=dict(size=10, color=COLORS["warning"], family="DM Sans, sans-serif"),
+                           font=dict(size=10, color=PALETTE[1], family="DM Sans, sans-serif"),
                            xanchor=anchor, yanchor="top",
                            bgcolor="rgba(255,255,255,0.75)")
     fig.update_layout(
