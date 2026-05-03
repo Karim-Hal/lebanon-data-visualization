@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
-from src.config import COLORS, COUNTRY_COLORS, EVENTS, SERIES
+from src.config import COLORS, COUNTRY_COLORS, EVENTS, PALETTE, SERIES
 from src.data_loader import load_wdi
 
 st.set_page_config(page_title="Macro Shock · Lebanon Crisis", page_icon="📉", layout="wide")
@@ -28,26 +28,60 @@ gdp_pc_all = (
 )
 
 # ---------------------------------------------------------------------------
-# Helper: add event vlines to a go.Figure
+# Helpers
 # ---------------------------------------------------------------------------
+def event_color(key):
+    return PALETTE[0] if key == "crisis_red" else PALETTE[1]
+
+
+# Stagger event annotations vertically so they don't overlap.
+# Each tuple: (y in paper coords, x-shift px, horizontal anchor)
+EVENT_LAYOUT = [
+    (0.93, 6, "left"),   # Banking crisis — top
+    (0.72, 6, "left"),   # Port explosion — mid
+    (0.51, 6, "left"),   # Subsidy removal — lower
+]
+
+
 def add_event_vlines(fig, row=None, col=None):
-    kwargs = {}
+    """Add event vlines without annotations (used for small-multiple facets)."""
+    kw = {}
     if row is not None:
-        kwargs["row"] = row
+        kw["row"] = row
     if col is not None:
-        kwargs["col"] = col
-    for date_str, label, color_key, dash in EVENTS:
+        kw["col"] = col
+    for date_str, _, color_key, dash in EVENTS:
+        yr = pd.Timestamp(date_str).year + (pd.Timestamp(date_str).month - 1) / 12
         fig.add_vline(
-            x=pd.Timestamp(date_str).timestamp() * 1000,
+            x=yr,
             line_dash=dash,
-            line_color=COLORS[color_key],
-            line_width=1.5,
-            annotation_text=label,
-            annotation_position="top right",
-            annotation_font_size=10,
-            annotation_font_color=COLORS[color_key],
-            **kwargs,
+            line_color=event_color(color_key),
+            line_width=1,
+            opacity=0.55,
+            **kw,
         )
+
+
+def add_event_vlines_annotated(fig):
+    """Add event vlines with staggered non-overlapping labels to a single-panel figure."""
+    for (date_str, label, color_key, dash), (y_pos, xshift, anchor) in zip(EVENTS, EVENT_LAYOUT):
+        yr = pd.Timestamp(date_str).year + (pd.Timestamp(date_str).month - 1) / 12
+        col = event_color(color_key)
+        fig.add_vline(x=yr, line_dash=dash, line_color=col, line_width=1.5)
+        fig.add_annotation(
+            x=yr, y=y_pos,
+            xref="x", yref="paper",
+            text=f"<b>{label}</b>",
+            showarrow=False,
+            font=dict(size=9, color=col),
+            bgcolor="white",
+            bordercolor=col,
+            borderwidth=1,
+            borderpad=4,
+            xanchor=anchor,
+            xshift=xshift,
+        )
+
 
 # ---------------------------------------------------------------------------
 # Page header
@@ -57,7 +91,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown(
-    "<p style='color:#555;font-size:15px'>GDP collapse, currency devaluation, and inflation compared across Lebanon and five regional peers.</p>",
+    "<p style='color:#666;font-size:15px'>GDP collapse, currency devaluation, and inflation compared across Lebanon and five regional peers.</p>",
     unsafe_allow_html=True,
 )
 st.markdown("---")
@@ -78,7 +112,7 @@ fig_dual.add_trace(
         x=lbn_gdp["Year"],
         y=lbn_gdp["gdp_bn"],
         name="GDP (USD bn)",
-        line=dict(color=COLORS["crisis_red"], width=2.5),
+        line=dict(color=PALETTE[0], width=2.5),
         mode="lines+markers",
         marker=dict(size=5),
         hovertemplate="<b>%{x}</b><br>GDP: $%{y:.1f}B<extra></extra>",
@@ -91,7 +125,7 @@ fig_dual.add_trace(
         x=lbn_fx["Year"],
         y=lbn_fx["Value"],
         name="Official LBP/USD",
-        line=dict(color=COLORS["steel_blue"], width=2.5, dash="dot"),
+        line=dict(color=PALETTE[3], width=2.5, dash="dot"),
         mode="lines+markers",
         marker=dict(size=5),
         hovertemplate="<b>%{x}</b><br>Rate: %{y:,.0f} LBP/USD<extra></extra>",
@@ -99,19 +133,7 @@ fig_dual.add_trace(
     secondary_y=True,
 )
 
-# Event vlines — expressed as year floats since X axis is integer Year
-for date_str, label, color_key, dash in EVENTS:
-    yr = pd.Timestamp(date_str).year + (pd.Timestamp(date_str).month - 1) / 12
-    fig_dual.add_vline(
-        x=yr,
-        line_dash=dash,
-        line_color=COLORS[color_key],
-        line_width=1.5,
-        annotation_text=label,
-        annotation_position="top left",
-        annotation_font_size=10,
-        annotation_font_color=COLORS[color_key],
-    )
+add_event_vlines_annotated(fig_dual)
 
 fig_dual.update_yaxes(
     title_text="GDP (USD billions)",
@@ -128,7 +150,7 @@ fig_dual.update_yaxes(
 )
 fig_dual.update_xaxes(title_text="Year", dtick=1)
 fig_dual.update_layout(
-    height=420,
+    height=440,
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     margin=dict(l=60, r=60, t=40, b=40),
     hovermode="x unified",
@@ -146,7 +168,10 @@ st.markdown(
     f"<h3 style='color:{COLORS['deep_navy']}'>Annual Inflation — Regional Comparison</h3>",
     unsafe_allow_html=True,
 )
-st.caption("Consumer price inflation (% annual). Lebanon's 2020–2023 surge dwarfs all regional peers.")
+st.caption(
+    "Consumer price inflation (% annual). Each panel uses an independent Y axis to show "
+    "each country's own trend — Lebanon's scale peaks above 200%, while peers range from 2–35%."
+)
 
 fig_inf = px.line(
     inflation_all.sort_values(["Country Name", "Year"]),
@@ -160,26 +185,14 @@ fig_inf = px.line(
     markers=True,
 )
 
-# Remove facet label prefix "Country Name="
 fig_inf.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-
-# Bold Lebanon facet title
 fig_inf.for_each_annotation(
-    lambda a: a.update(font=dict(color=COLORS["crisis_red"], size=12, family="Segoe UI"))
+    lambda a: a.update(font=dict(color=PALETTE[0], size=12, family="Segoe UI"))
     if a.text == "Lebanon"
     else a.update(font=dict(color=COLORS["deep_navy"], size=11, family="Segoe UI"))
 )
 
-# Add event vlines on each facet
-for date_str, label, color_key, dash in EVENTS:
-    yr = pd.Timestamp(date_str).year + (pd.Timestamp(date_str).month - 1) / 12
-    fig_inf.add_vline(
-        x=yr,
-        line_dash=dash,
-        line_color=COLORS[color_key],
-        line_width=1,
-        opacity=0.6,
-    )
+add_event_vlines(fig_inf)
 
 fig_inf.update_yaxes(matches=None, showticklabels=True, ticksuffix="%", gridcolor="#E5E5E5")
 fig_inf.update_xaxes(dtick=3, tickangle=-45)
@@ -209,20 +222,44 @@ st.markdown(
 )
 st.caption("Source: World Bank WDI · NY.GDP.PCAP.CD")
 
-# Show only years 2011–2024; format as currency strings
 display_years = [y for y in range(2011, 2025) if y in gdp_pc_all.columns]
 table_df = gdp_pc_all[display_years].copy()
 
-# Style: highlight Lebanon row
-def highlight_lebanon(row):
+def style_table(row):
     if row.name == "Lebanon":
-        return [f"background-color:{COLORS['card_bg']};font-weight:bold;color:{COLORS['crisis_red']}"] * len(row)
-    return [""] * len(row)
+        return [
+            f"background-color:{PALETTE[0]}18;color:{PALETTE[0]};font-weight:700"
+        ] * len(row)
+    # Alternate rows for readability
+    countries = list(table_df.index)
+    idx = countries.index(row.name)
+    bg = COLORS["card_bg"] if idx % 2 == 0 else "white"
+    return [f"background-color:{bg};color:{COLORS['deep_navy']}"] * len(row)
 
 styled = (
     table_df.style
-    .apply(highlight_lebanon, axis=1)
+    .apply(style_table, axis=1)
     .format("${:,.0f}", na_rep="—")
+    .set_table_styles([
+        {
+            "selector": "th",
+            "props": [
+                ("background-color", COLORS["deep_navy"]),
+                ("color", "white"),
+                ("font-weight", "700"),
+                ("font-size", "12px"),
+                ("text-align", "center"),
+            ],
+        },
+        {
+            "selector": "th.row_heading",
+            "props": [
+                ("background-color", COLORS["card_bg"]),
+                ("color", COLORS["deep_navy"]),
+                ("font-weight", "600"),
+            ],
+        },
+    ])
 )
 
 st.dataframe(styled, use_container_width=True)

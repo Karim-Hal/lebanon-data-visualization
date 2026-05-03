@@ -34,14 +34,14 @@ PALETTE = [
     "#7f6aa3",  # medium purple — additional series
 ]
 
-# Per-country color assignments for macro charts
+# Per-country color assignments — mapped to PALETTE (see CLAUDE.md §7)
 COUNTRY_COLORS = {
-    "Lebanon":                "#C00000",
-    "Jordan":                 "#2E74B5",
-    "Egypt, Arab Rep.":       "#1F7A8C",
-    "Syrian Arab Republic":   "#E36C09",
-    "Saudi Arabia":           "#1F3864",
-    "United Arab Emirates":   "#6A9153",
+    "Lebanon":                "#ff595e",  # PALETTE coral red
+    "Jordan":                 "#46dff7",  # PALETTE cyan
+    "Egypt, Arab Rep.":       "#6a4c93",  # PALETTE dark purple
+    "Syrian Arab Republic":   "#ffca3a",  # PALETTE amber
+    "Saudi Arabia":           "#1982c4",  # PALETTE blue
+    "United Arab Emirates":   "#7f6aa3",  # PALETTE medium purple
 }
 
 # ---------------------------------------------------------------------------
