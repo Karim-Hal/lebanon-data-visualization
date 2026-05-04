@@ -611,6 +611,65 @@ def _fig_inflation(wdi):
     return fig.to_json()
 
 
+def _fig_inflation_heatmap(wdi):
+    """Country × Year heatmap of annual inflation.
+    Color scale is capped at 300% so Lebanon's 221% reads clearly even when
+    Syria's earlier hyperinflation is in the data.  Cells show exact values.
+    """
+    CAP = 300.0
+    inf = wdi[wdi["Series Code"] == SERIES["inflation"]].copy()
+    pivot = inf.pivot_table(index="Country Name", columns="Year", values="Value")
+    years = sorted(y for y in pivot.columns if 2011 <= y <= 2024)
+    country_order = ["Lebanon"] + sorted(c for c in pivot.index if c != "Lebanon")
+    pivot = pivot.loc[[c for c in country_order if c in pivot.index], years]
+
+    z_vals, text_vals = [], []
+    for country in pivot.index:
+        row_z, row_t = [], []
+        for yr in years:
+            v = pivot.loc[country, yr] if yr in pivot.columns else None
+            if v is None or (isinstance(v, float) and v != v):
+                row_z.append(None)
+                row_t.append("")
+            else:
+                row_z.append(min(float(v), CAP))
+                row_t.append("{:.0f}%".format(float(v)))
+        z_vals.append(row_z)
+        text_vals.append(row_t)
+
+    fig = go.Figure(go.Heatmap(
+        z=z_vals,
+        x=[str(y) for y in years],
+        y=list(pivot.index),
+        text=text_vals,
+        texttemplate="%{text}",
+        colorscale=[
+            [0.00, "#EBF3FB"],
+            [0.20, PALETTE[3]],
+            [0.50, PALETTE[1]],
+            [0.80, PALETTE[0]],
+            [1.00, COLORS["crisis_red"]],
+        ],
+        zmin=0,
+        zmax=CAP,
+        colorbar=dict(
+            title="Inflation %", ticksuffix="%", len=0.7,
+            tickvals=[0, 50, 100, 200, 300],
+        ),
+        hoverongaps=False,
+        hovertemplate="<b>%{y}</b><br>%{x}: %{text}<extra></extra>",
+        textfont=dict(family="DM Sans, sans-serif", size=10, color="#1F3864"),
+    ))
+    fig.update_layout(
+        **_BASE,
+        height=290,
+        margin=dict(l=185, r=20, t=10, b=55),
+        xaxis=dict(tickangle=-45, showgrid=False, side="bottom"),
+        yaxis=dict(showgrid=False, autorange="reversed"),
+    )
+    return fig.to_json()
+
+
 def _html_gdp_table(wdi):
     gdp_pc = (
         wdi[wdi["Series Code"] == SERIES["gdp_pc"]]
@@ -759,6 +818,59 @@ def _fig_scatter(basket, exrate):
                       xaxis=dict(tickformat=",", gridcolor="#EEF1F5", showgrid=True),
                       yaxis=dict(tickprefix="$", gridcolor="#EEF1F5"))
     return fig.to_json(), r, r2, len(sdf)
+
+
+def _fig_treemap(prices):
+    """Treemap: each basket commodity as a tile.
+    Area = latest price index value (so bigger tile = more inflation).
+    Each commodity gets a distinct palette color so they're all readable.
+    Label shows % inflation since 2019 rather than the raw index.
+    """
+    prices = _rebase_price_index(prices)
+    df = (
+        prices[prices["commodity"].isin(BASKET)]
+        .dropna(subset=["price_index"])
+        .sort_values("date")
+        .groupby("commodity", as_index=False)
+        .last()
+    )
+    df["short"]      = df["commodity"].str.split("(").str[0].str.strip()
+    df["pct_change"] = (df["price_index"] - 100).round(0).astype(int)
+    df["year"]       = df["date"].dt.year.astype(str)
+
+    commodities = sorted(df["commodity"].unique())
+    # One distinct palette color per commodity — skip index 0 (crisis red) for
+    # the root tile so it doesn't clash; root gets the lighter card_bg.
+    color_map = {c: PALETTE[(i + 1) % len(PALETTE)] for i, c in enumerate(commodities)}
+    color_map["Basket"] = COLORS["card_bg"]
+
+    fig = px.treemap(
+        df,
+        path=[px.Constant("Basket"), "commodity"],
+        values="price_index",
+        color="commodity",
+        color_discrete_map=color_map,
+        custom_data=["short", "price_index", "pct_change", "year"],
+    )
+    fig.update_traces(
+        texttemplate="<b>%{customdata[0]}</b><br>+%{customdata[2]}% since 2019",
+        textfont=dict(family="DM Sans, sans-serif", size=13, color="#FFFFFF"),
+        marker_line_width=3,
+        marker_line_color="white",
+        hovertemplate=(
+            "<b>%{customdata[0]}</b><br>"
+            "Inflation since 2019: <b>+%{customdata[2]}%</b><br>"
+            "Price Index: %{customdata[1]:.0f} (2019 = 100)<br>"
+            "Latest data: %{customdata[3]}<extra></extra>"
+        ),
+    )
+    fig.update_layout(
+        **_BASE,
+        height=360,
+        margin=dict(l=10, r=10, t=10, b=10),
+        showlegend=False,
+    )
+    return fig.to_json()
 
 
 # IPC mappings
@@ -1172,6 +1284,96 @@ def _fig_mena(u5mort):
     return fig.to_json()
 
 
+def _fig_radar(health):
+    """Radar/spider chart comparing Lebanon's child health profile pre-crisis (≤2019)
+    vs post-crisis (2020+).  Each axis is one indicator normalised to [0,1] relative
+    to its own range, so the two polygons are directly comparable despite different units.
+    Larger polygon area = worse outcome (all indicators are "lower is better").
+    """
+    h = _btsx(health)
+    _RADAR_CODES = {
+        "Stunting":       "NUTSTUNTINGPREV",
+        "Wasting":        "NUTRITION_WH_2",
+        "Underweight":    "NUTRITION_WA_2",
+        "Anaemia":        "NUTRITION_ANAEMIA_CHILDREN_PREV",
+        "Infant Mort.":   "MDG_0000000001",
+        "Under-5 Mort.":  "MDG_0000000007",
+    }
+    pre_abs, post_abs, labels = [], [], []
+    for label, code in _RADAR_CODES.items():
+        dfc = (
+            h[h["GHO (CODE)"] == code][["YEAR (DISPLAY)", "Numeric"]]
+            .dropna().sort_values("YEAR (DISPLAY)")
+        )
+        if dfc.empty:
+            continue
+        pre_rows  = dfc[dfc["YEAR (DISPLAY)"] <= 2019]
+        post_rows = dfc[dfc["YEAR (DISPLAY)"] >= 2020]
+        if pre_rows.empty or post_rows.empty:
+            continue
+        pre_abs.append(float(pre_rows.iloc[-1]["Numeric"]))
+        post_abs.append(float(post_rows.iloc[-1]["Numeric"]))
+        labels.append(label)
+
+    if len(labels) < 3:
+        fig = go.Figure()
+        fig.add_annotation(text="Insufficient data for radar chart",
+                           xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False)
+        fig.update_layout(**_BASE, height=420)
+        return fig.to_json()
+
+    # Normalise per-indicator to [0,1] so axes are comparable
+    norm_pre, norm_post = [], []
+    for p, q in zip(pre_abs, post_abs):
+        m = max(p, q, 1e-9)
+        norm_pre.append(p / m)
+        norm_post.append(q / m)
+
+    # Close the polygon loop
+    cats   = labels + [labels[0]]
+    r_pre  = norm_pre  + [norm_pre[0]]
+    r_post = norm_post + [norm_post[0]]
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatterpolar(
+        r=r_pre, theta=cats,
+        fill="toself",
+        name="Pre-crisis (≤ 2019)",
+        line=dict(color=PALETTE[3], width=2.5),
+        fillcolor="rgba(25,130,196,0.10)",
+        hovertemplate="<b>%{theta}</b><br>Pre-crisis (normalised): %{r:.2f}<extra></extra>",
+    ))
+    fig.add_trace(go.Scatterpolar(
+        r=r_post, theta=cats,
+        fill="toself",
+        name="Post-crisis (2020+)",
+        line=dict(color=PALETTE[0], width=2.5),
+        fillcolor="rgba(255,89,94,0.13)",
+        hovertemplate="<b>%{theta}</b><br>Post-crisis (normalised): %{r:.2f}<extra></extra>",
+    ))
+    fig.update_layout(
+        **_BASE,
+        height=460,
+        margin=dict(l=60, r=60, t=44, b=90),
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 1],
+                showticklabels=False,
+                gridcolor="#EEF1F5",
+                linecolor="#DDDDDD",
+            ),
+            angularaxis=dict(gridcolor="#EEF1F5", linecolor="#DDDDDD"),
+            bgcolor="white",
+        ),
+        legend=dict(
+            orientation="h", yanchor="top", y=-0.05,
+            xanchor="center", x=0.5,
+        ),
+    )
+    return fig.to_json()
+
+
 # =============================================================================
 # Health indicator registry (used by data builder + section renderer)
 # =============================================================================
@@ -1385,9 +1587,10 @@ def _section_landing(d):
 
 def _section_macro(d):
     wdi = d["wdi"]
-    gdp_json = _fig_gdp_rate(wdi)
-    inf_json = _fig_inflation(wdi)
-    tbl_html = _html_gdp_table(wdi)
+    gdp_json   = _fig_gdp_rate(wdi)
+    inf_json   = _fig_inflation(wdi)
+    heat_json  = _fig_inflation_heatmap(wdi)
+    tbl_html   = _html_gdp_table(wdi)
 
     return (
         '<section id="s-macro">'
@@ -1412,6 +1615,13 @@ def _section_macro(d):
         + _plot_tag("inflation", inf_json) +
         '</div>'
         '<div class="chart-card">'
+        '<div class="chart-title">Inflation Heatmap &mdash; Country &times; Year</div>'
+        '<div class="chart-caption">Each cell shows the annual inflation rate. '
+        'Colour scale runs from cool blue (low) to deep red (high), capped at 300% '
+        'so Lebanon&rsquo;s 221% peak reads clearly. Hover for exact values.</div>'
+        + _plot_tag("inflation_heatmap", heat_json) +
+        '</div>'
+        '<div class="chart-card">'
         '<div class="chart-title">GDP per Capita (USD) &mdash; Country &times; Year</div>'
         '<div class="chart-caption">Source: World Bank WDI &middot; NY.GDP.PCAP.CD '
         '&middot; Lebanon row highlighted.</div>'
@@ -1431,6 +1641,7 @@ def _section_food(d):
     idx_json             = _fig_price_index(prices)
     lbp_usd_json         = _fig_lbp_usd(basket)
     scat_json, r, r2, n  = _fig_scatter(basket, exrate)
+    treemap_json         = _fig_treemap(prices)
     food_json            = _build_food_data(prices, basket)
 
     # Year range options
@@ -1518,6 +1729,14 @@ def _section_food(d):
         + _plot_tag("scatter", scat_json) +
         '</div>'
         + callout +
+        '</div>'
+        '<div class="chart-card">'
+        '<div class="chart-title">Basket Commodity Inflation Snapshot</div>'
+        '<div class="chart-caption">Each tile represents one basket commodity. '
+        'Tile area is proportional to the latest price index value (2019 = 100) &mdash; '
+        'larger tiles have inflated more. Colour intensity follows the same scale. '
+        'Hover for exact index values.</div>'
+        + _plot_tag("treemap", treemap_json) +
         '</div>'
         '<p class="source-line">Sources: WFP VAM Food Price Monitoring '
         '&middot; Unofficial exchange rate from WFP parallel market data</p>'
@@ -1622,6 +1841,7 @@ def _section_health(d):
     lag_json    = _fig_lag(basket, health)
     multi_json  = _fig_small_mult(health)
     db_json     = _fig_dumbbell(health)
+    radar_json  = _fig_radar(health)
     mena_json   = _fig_mena(u5mort)
     health_json = _build_health_data(health)
 
@@ -1684,6 +1904,14 @@ def _section_health(d):
         'and the latest available year. All indicators are &ldquo;lower is better&rdquo; &mdash; '
         'green = improved, red = worsened. Hover for exact values.</div>'
         + _plot_tag("dumbbell", db_json) +
+        '</div>'
+        '<div class="chart-card">'
+        '<div class="chart-title">Health Profile Radar &mdash; Pre-Crisis vs Post-Crisis</div>'
+        '<div class="chart-caption">Spider chart comparing Lebanon&rsquo;s child health profile '
+        'before the economic collapse (&le; 2019) against the post-crisis period (2020+). '
+        'Each axis is one indicator, normalised to its own range so all dimensions are comparable. '
+        '<strong>Larger area = worse outcome</strong> &mdash; all indicators are &ldquo;lower is better&rdquo;.</div>'
+        + _plot_tag("radar", radar_json) +
         '</div>'
         '<div class="chart-card">'
         '<div class="chart-title">Regional Under-5 Mortality &mdash; MENA Comparison</div>'
