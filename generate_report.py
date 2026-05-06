@@ -2281,7 +2281,6 @@ def _section_health(d):
     lag_json    = _fig_lag(basket, health)
     slope_json  = _fig_slope(health)
     db_json     = _fig_dumbbell(health)
-    radar_json  = _fig_radar(health)
     mena_json   = _fig_mena(u5mort)
     health_json = _build_health_data(health)
 
@@ -2346,14 +2345,6 @@ def _section_health(d):
         'and the latest available year. All indicators are &ldquo;lower is better&rdquo; &mdash; '
         'green = improved, red = worsened. Hover for exact values.</div>'
         + _plot_tag("dumbbell", db_json) +
-        '</div>'
-        '<div class="chart-card">'
-        '<div class="chart-title">Health Profile Radar &mdash; Pre-Crisis vs Post-Crisis</div>'
-        '<div class="chart-caption">Spider chart comparing Lebanon&rsquo;s child health profile '
-        'before the economic collapse (&le; 2019) against the post-crisis period (2020+). '
-        'Each axis is one indicator, normalised to its own range so all dimensions are comparable. '
-        '<strong>Larger area = worse outcome</strong> &mdash; all indicators are &ldquo;lower is better&rdquo;.</div>'
-        + _plot_tag("radar", radar_json) +
         '</div>'
         '<div class="chart-card">'
         '<div class="chart-title">Regional Under-5 Mortality &mdash; MENA Comparison</div>'
