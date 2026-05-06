@@ -496,6 +496,114 @@ def build_html(body):
 # Figure builders
 # =============================================================================
 
+def _fig_sankey(ipc_geo, ipc_pop):
+    """3-column Sankey: Population Group -> IPC Phase -> Governorate.
+
+    Two independent IPC surveys feed this: ipc_pop has group x phase,
+    ipc_geo has gov x phase. We scale the right-side flows so that the
+    total flow into each phase node equals the total flow out of it.
+    """
+    def _hex_to_rgba(hx, alpha):
+        hx = hx.lstrip("#")
+        r, g, b = int(hx[0:2], 16), int(hx[2:4], 16), int(hx[4:6], 16)
+        return "rgba({},{},{},{})".format(r, g, b, alpha)
+
+    geo = ipc_geo.copy()
+    geo["gov"] = geo["admin1_normalized"].map(_IPC_TO_GOV)
+    geo_snap = geo[geo["analysis_date"] == geo["analysis_date"].max()]
+
+    pop_latest = (
+        ipc_pop.dropna(subset=["Phase 1 number current"])
+        .sort_values("analysis_date")
+        .groupby("Level 1", as_index=False)
+        .last()
+    )
+
+    groups = [g for g in POPULATION_GROUPS if g in pop_latest["Level 1"].values]
+    phases = ["Phase 1", "Phase 2", "Phase 3", "Phase 4", "Phase 5"]
+    govs = sorted(geo_snap["gov"].dropna().unique())
+
+    nodes = groups + phases + govs
+    idx = {n: i for i, n in enumerate(nodes)}
+
+    sources, targets, values, link_colors = [], [], [], []
+
+    grp_phase_totals = {p: 0.0 for p in phases}
+    for _, row in pop_latest.iterrows():
+        if row["Level 1"] not in groups:
+            continue
+        for i, p in enumerate(phases, start=1):
+            n = row.get(f"Phase {i} number current", 0) or 0
+            if n <= 0:
+                continue
+            sources.append(idx[row["Level 1"]])
+            targets.append(idx[p])
+            values.append(float(n))
+            link_colors.append(_hex_to_rgba(COLORS[f"ipc_phase_{i}"], 0.33))
+            grp_phase_totals[p] += float(n)
+
+    geo_agg = (
+        geo_snap.dropna(subset=["gov"])
+        .groupby("gov")
+        .agg({f"Phase {i} percentage current": "mean" for i in range(1, 6)})
+        .reset_index()
+    )
+    pop_total_per_gov = (
+        geo_snap.groupby("gov")["Population analyzed current"].mean().to_dict()
+    )
+
+    for i, p in enumerate(phases, start=1):
+        col = f"Phase {i} percentage current"
+        gov_pop = []
+        for _, row in geo_agg.iterrows():
+            pop = pop_total_per_gov.get(row["gov"], 0) or 0
+            gov_pop.append((row["gov"], row[col] * pop))
+        total_in_phase = sum(v for _, v in gov_pop) or 1.0
+        target_total = grp_phase_totals[p]
+        if target_total <= 0:
+            continue
+        for gov_name, pop_in_phase in gov_pop:
+            if pop_in_phase <= 0:
+                continue
+            scaled = pop_in_phase / total_in_phase * target_total
+            sources.append(idx[p])
+            targets.append(idx[gov_name])
+            values.append(scaled)
+            link_colors.append(_hex_to_rgba(COLORS[f"ipc_phase_{i}"], 0.27))
+
+    node_colors = (
+        [PALETTE[i % len(PALETTE)] for i, _ in enumerate(groups)]
+        + [COLORS[f"ipc_phase_{i}"] for i in range(1, 6)]
+        + ["#888888"] * len(govs)
+    )
+
+    fig = go.Figure(go.Sankey(
+        arrangement="snap",
+        node=dict(
+            label=nodes,
+            color=node_colors,
+            pad=14, thickness=14,
+            line=dict(color="rgba(255,255,255,0.5)", width=0.5),
+            hovertemplate="<b>%{label}</b><br>%{value:,.0f}<extra></extra>",
+        ),
+        link=dict(
+            source=sources, target=targets, value=values, color=link_colors,
+            hovertemplate=(
+                "<b>%{source.label} → %{target.label}</b><br>"
+                "%{value:,.0f} people<extra></extra>"
+            ),
+        ),
+    ))
+    fig.update_layout(
+        font=dict(family="DM Sans, sans-serif", color="rgba(255,255,255,0.85)", size=11),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=440,
+        margin=dict(l=10, r=10, t=10, b=10),
+    )
+    return fig.to_json()
+
+
 def _fig_timeline():
     event_dates  = [pd.Timestamp(e[0]) for e in EVENTS]
     event_labels = [e[1]               for e in EVENTS]
@@ -1928,6 +2036,7 @@ def _section_landing(d):
     latest_fx  = exrate.loc[exrate["date"].idxmax(), "date"].strftime("%b %Y")
 
     tl_json = _fig_timeline()
+    sankey_json = _fig_sankey(d["ipc_geo"], d["ipc_pop"])
 
     kpi_defs = [
         ("{:.1f}%".format(peak_inf),  "Peak Annual Inflation",
@@ -1962,6 +2071,17 @@ def _section_landing(d):
         '</p>'
         '<div class="kpi-row">' + kpi_html + '</div>'
         '<div class="timeline-wrap">' + _plot_tag("timeline", tl_json) + '</div>'
+        '<div style="background:rgba(255,255,255,0.04);border-radius:8px;'
+        'padding:18px;margin-top:32px">'
+        '<div style="font-size:10px;font-weight:700;letter-spacing:0.14em;'
+        'text-transform:uppercase;color:rgba(255,255,255,0.45);margin-bottom:8px">'
+        'Narrative arc &mdash; Population, food insecurity, geography</div>'
+        '<div style="font-size:13px;color:rgba(255,255,255,0.7);'
+        'margin-bottom:14px;line-height:1.6">'
+        'How Lebanon\'s population sorts by IPC phase, and where each phase concentrates '
+        'geographically. Hover any flow for exact headcounts.</div>'
+        + _plot_tag("sankey", sankey_json) +
+        '</div>'
         '</div>'
         '<p style="background:var(--navy);color:rgba(255,255,255,0.2);font-size:10px;'
         'text-align:right;padding:8px 60px 28px;letter-spacing:0.05em">'

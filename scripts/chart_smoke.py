@@ -128,6 +128,19 @@ def t_slope():
 
 smoke("slope", t_slope)
 
+
+def t_sankey():
+    from generate_report import _fig_sankey
+    from src.data_loader import load_ipc_geo, load_ipc_population_groups
+    j = _fig_sankey(load_ipc_geo(), load_ipc_population_groups())
+    assert_valid_plotly_json(j, expected_min_traces=1, label="sankey")
+    obj = json.loads(j)
+    assert obj["data"][0]["type"] == "sankey", "sankey: not a sankey"
+    nodes = obj["data"][0]["node"]["label"]
+    assert len(nodes) >= 13, f"sankey: too few nodes ({len(nodes)})"
+
+smoke("sankey", t_sankey)
+
 if __name__ == "__main__":
     if not results:
         print("(no smoke tests registered yet)")
