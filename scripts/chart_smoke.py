@@ -101,6 +101,15 @@ def t_treemap_insecurity():
 
 smoke("treemap_a", t_treemap_insecurity)
 
+
+def t_pop_group_time():
+    from generate_report import _fig_pop_group_time
+    from src.data_loader import load_ipc_population_groups
+    j = _fig_pop_group_time(load_ipc_population_groups())
+    assert_valid_plotly_json(j, expected_min_traces=2, label="pop_group_time")
+
+smoke("pop_group_time", t_pop_group_time)
+
 if __name__ == "__main__":
     if not results:
         print("(no smoke tests registered yet)")

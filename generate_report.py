@@ -1133,6 +1133,44 @@ def _fig_donut(ipc_pop):
     return fig.to_json()
 
 
+def _fig_pop_group_time(ipc_pop):
+    """Phase 3+ % over time per population group."""
+    df = ipc_pop.dropna(subset=["Phase 3+ percentage current", "analysis_date"]).copy()
+    df = df[df["Level 1"].isin(POPULATION_GROUPS)]
+    df["pct"] = (df["Phase 3+ percentage current"] * 100).round(1)
+    df["headcount"] = df["Phase 3+ number current"].fillna(0)
+    df = df.sort_values(["Level 1", "analysis_date"])
+
+    fig = go.Figure()
+    for i, group in enumerate(POPULATION_GROUPS):
+        sub = df[df["Level 1"] == group]
+        if sub.empty:
+            continue
+        color = PALETTE[i % len(PALETTE)]
+        fig.add_trace(go.Scatter(
+            x=sub["analysis_date"], y=sub["pct"],
+            mode="lines+markers",
+            name=group,
+            line=dict(color=color, width=2.5),
+            marker=dict(size=[max(6, min(18, (h ** 0.5) / 10)) for h in sub["headcount"]],
+                        color=color,
+                        line=dict(color="white", width=1)),
+            customdata=sub["headcount"],
+            hovertemplate=(
+                "<b>" + group + "</b><br>%{x|%b %Y}<br>"
+                "Phase 3+: %{y:.1f}%<br>People: %{customdata:,.0f}<extra></extra>"
+            ),
+        ))
+    fig.update_layout(
+        **_BASE, height=360, margin=dict(l=60, r=24, t=24, b=48),
+        hovermode="closest",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        xaxis=dict(showgrid=False),
+        yaxis=dict(title="Phase 3+ (%)", ticksuffix="%", gridcolor="#EEF1F5"),
+    )
+    return fig.to_json()
+
+
 def _fig_treemap_insecurity(geo_snap, ipc_pop):
     """Treemap of Phase 3+ headcount: Governorate -> Population Group.
 
@@ -2028,13 +2066,14 @@ def _section_insecurity(d):
     snap_label    = latest_date.strftime("%B %Y")
     selected_year = latest_date.year
 
-    choro_json   = _fig_choropleth(geo_snap)
-    donut_json   = _fig_donut(ipc_pop)
-    ipc_bar_json = _fig_ipc_bar(geo_snap)
-    gov_bar_json = _fig_gov_bar(prices, selected_year)
+    choro_json    = _fig_choropleth(geo_snap)
+    donut_json    = _fig_donut(ipc_pop)
+    ipc_bar_json  = _fig_ipc_bar(geo_snap)
+    gov_bar_json  = _fig_gov_bar(prices, selected_year)
+    treemap_a_json = _fig_treemap_insecurity(geo_snap, ipc_pop)
+    poptime_json  = _fig_pop_group_time(ipc_pop)
     ipc_data_json = _build_ipc_data(d["ipc_geo"], prices)
 
-    # Date buttons — one per unique snapshot
     unique_dates = sorted(d["ipc_geo"]["analysis_date"].unique())
     date_buttons = ""
     for dt in unique_dates:
@@ -2067,37 +2106,56 @@ def _section_insecurity(d):
         '<span class="section-eyebrow">Snapshot: ' + snap_label + '</span>'
         '</div>'
         '<h2 class="section-title">Who Suffers Most</h2>'
-        '<p class="section-sub">IPC food insecurity phases broken down by governorate '
-        'and population group. Select a snapshot date to update all charts below.</p>'
+        '<p class="section-sub">IPC food insecurity phases broken down by governorate, '
+        'population group, and over time. Select a snapshot date to update charts that '
+        'support filtering.</p>'
         + ipc_filter +
-        '<div class="g60">'
+        # Row 1: IPC choropleth | (placeholder donut — Task 13 replaces with UNHCR)
+        '<div class="g2">'
         '<div class="chart-card" style="margin-bottom:0">'
         '<div class="chart-title">IPC Phase 3+ by Governorate</div>'
-        '<div class="chart-caption">Share of population in acute food insecurity '
-        '(Phase 3 or above). Darker = more severe.</div>'
+        '<div class="chart-caption">Share of population in acute food insecurity. '
+        'Darker = more severe.</div>'
         + _plot_tag("choropleth", choro_json) +
         '</div>'
         '<div class="chart-card" style="margin-bottom:0">'
-        '<div class="chart-title">Phase 3+ by Population Group</div>'
-        '<div class="chart-caption">Each group at its most recent available survey date. '
-        'Hover for exact figures.</div>'
+        '<div class="chart-title">Phase 3+ Population Composition (Latest)</div>'
+        '<div class="chart-caption">Population-group breakdown at most recent snapshot.</div>'
         + _plot_tag("donut", donut_json) +
         '</div>'
         '</div>'
         '<div style="margin-bottom:22px"></div>'
-        '<div class="g65">'
+        # Row 2: Treemap A | Population-group time series
+        '<div class="g2">'
         '<div class="chart-card" style="margin-bottom:0">'
+        '<div class="chart-title">Phase 3+ Headcount &mdash; Governorate &times; Group</div>'
+        '<div class="chart-caption">Treemap of estimated Phase 3+ population. '
+        'Tile area is proportional to absolute number of people. '
+        '<em>Note:</em> assumes latest national group composition applies uniformly '
+        'across governorates (the IPC surveys are independent).</div>'
+        + _plot_tag("treemap_a", treemap_a_json) +
+        '</div>'
+        '<div class="chart-card" style="margin-bottom:0">'
+        '<div class="chart-title">Phase 3+ Trend by Population Group</div>'
+        '<div class="chart-caption">Each line tracks Phase 3+ over time. '
+        'Marker size scales with absolute headcount in that snapshot.</div>'
+        + _plot_tag("pop_group_time", poptime_json) +
+        '</div>'
+        '</div>'
+        '<div style="margin-bottom:22px"></div>'
+        # Row 3: IPC stacked bar
+        '<div class="chart-card">'
         '<div class="chart-title">IPC Phase Distribution by Governorate</div>'
         '<div class="chart-caption">Stacked bars &mdash; % of analysed population '
         'in each IPC phase. Sorted by Phase 3+ share.</div>'
         + _plot_tag("ipc_bar", ipc_bar_json) +
         '</div>'
-        '<div class="chart-card" style="margin-bottom:0">'
+        # Row 4: Gov basket bar
+        '<div class="chart-card">'
         '<div class="chart-title">Avg Basket Price by Governorate &mdash; '
         '<span id="gov-bar-year">' + str(selected_year) + '</span></div>'
         '<div class="chart-caption">Average USD price of basket commodities per governorate.</div>'
         + _plot_tag("gov_bar", gov_bar_json) +
-        '</div>'
         '</div>'
         '<p class="source-line">Sources: IPC Global Platform '
         '&middot; WFP VAM Food Price Monitoring</p>'
