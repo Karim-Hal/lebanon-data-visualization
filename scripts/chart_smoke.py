@@ -87,6 +87,20 @@ def t_inflation_ridge():
 
 smoke("inflation_ridge", t_inflation_ridge)
 
+
+def t_treemap_insecurity():
+    from generate_report import _fig_treemap_insecurity, _IPC_TO_GOV
+    from src.data_loader import load_ipc_geo, load_ipc_population_groups
+    geo = load_ipc_geo().copy()
+    geo["gov"] = geo["admin1_normalized"].map(_IPC_TO_GOV)
+    snap = geo[geo["analysis_date"] == geo["analysis_date"].max()]
+    j = _fig_treemap_insecurity(snap, load_ipc_population_groups())
+    assert_valid_plotly_json(j, expected_min_traces=1, label="treemap_a")
+    obj = json.loads(j)
+    assert obj["data"][0].get("type") == "treemap", "treemap_a: not a treemap"
+
+smoke("treemap_a", t_treemap_insecurity)
+
 if __name__ == "__main__":
     if not results:
         print("(no smoke tests registered yet)")

@@ -1133,6 +1133,88 @@ def _fig_donut(ipc_pop):
     return fig.to_json()
 
 
+def _fig_treemap_insecurity(geo_snap, ipc_pop):
+    """Treemap of Phase 3+ headcount: Governorate -> Population Group.
+
+    Combines two independent IPC surveys:
+      - geo_snap: per-governorate phase rates  (population NOT broken by group)
+      - ipc_pop:  per-group phase rates        (NOT broken by governorate)
+
+    Approximation: assume the latest national group composition holds uniformly
+    in every governorate. Tile area = (gov_phase3plus_pop) * (group_share_at_national).
+    Color = group's national Phase 3+ rate.
+    Caption MUST disclose this assumption.
+    """
+    gov_df = (
+        geo_snap.dropna(subset=["gov"])
+        .groupby("gov", as_index=False)
+        .agg(p3_pct=("Phase 3+ percentage current", "mean"),
+             pop=("Population analyzed current", "mean"))
+    )
+    gov_df["p3_pop"] = gov_df["p3_pct"] * gov_df["pop"]
+
+    pop_latest = (
+        ipc_pop.dropna(subset=["Phase 3+ number current"])
+        .sort_values("analysis_date")
+        .groupby("Level 1", as_index=False)
+        .last()
+    )
+    grp_total = pop_latest["Phase 3+ number current"].sum()
+    if grp_total <= 0 or gov_df.empty:
+        fig = go.Figure()
+        fig.update_layout(**_BASE, height=320,
+                          annotations=[dict(text="Insufficient IPC data",
+                                            x=0.5, y=0.5, xref="paper", yref="paper",
+                                            showarrow=False)])
+        return fig.to_json()
+
+    pop_latest = pop_latest.assign(
+        share=pop_latest["Phase 3+ number current"] / grp_total,
+        rate=pop_latest["Phase 3+ percentage current"],
+    )
+
+    rows = []
+    for _, g in gov_df.iterrows():
+        for _, p in pop_latest.iterrows():
+            rows.append({
+                "gov":   g["gov"],
+                "group": p["Level 1"],
+                "p3_pop": float(g["p3_pop"]) * float(p["share"]),
+                "rate":  float(p["rate"]),
+            })
+    cross = pd.DataFrame(rows)
+    cross = cross[cross["p3_pop"] > 0]
+
+    fig = px.treemap(
+        cross,
+        path=[px.Constant("Lebanon"), "gov", "group"],
+        values="p3_pop",
+        color="rate",
+        color_continuous_scale=[
+            [0.0, COLORS["card_bg"]],
+            [0.5, COLORS["ipc_phase_3"]],
+            [1.0, COLORS["ipc_phase_5"]],
+        ],
+        range_color=(0, 1),
+        custom_data=["p3_pop", "rate"],
+    )
+    fig.update_traces(
+        texttemplate="<b>%{label}</b><br>~%{customdata[0]:,.0f}",
+        textfont=dict(family="DM Sans, sans-serif", size=11, color="#FFFFFF"),
+        marker_line_width=2, marker_line_color="white",
+        hovertemplate=(
+            "<b>%{label}</b><br>"
+            "Phase 3+ headcount (est.): %{customdata[0]:,.0f}<br>"
+            "Group Phase 3+ rate: %{customdata[1]:.0%}<extra></extra>"
+        ),
+    )
+    fig.update_layout(
+        **_BASE, height=400, margin=dict(l=10, r=10, t=10, b=10),
+        coloraxis_colorbar=dict(title="Phase 3+ rate", tickformat=".0%", len=0.7),
+    )
+    return fig.to_json()
+
+
 def _fig_ipc_bar(geo_snap):
     bar_df = (
         geo_snap.dropna(subset=["gov"])
