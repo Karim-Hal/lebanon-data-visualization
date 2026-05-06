@@ -301,6 +301,23 @@ run("health_filtered", check_health_filtered)
 
 
 # ---------------------------------------------------------------------------
+# Remittances (BX.TRF.PWKR.DT.GD.ZS) appended to wdi_long.csv
+# ---------------------------------------------------------------------------
+def check_remittances():
+    path = DATA / "wdi_long.csv"
+    df = pd.read_csv(path)
+    rem = df[df["Series Code"] == "BX.TRF.PWKR.DT.GD.ZS"]
+    assert not rem.empty, "Remittance series BX.TRF.PWKR.DT.GD.ZS missing from wdi_long.csv"
+    countries = set(rem["Country Name"].unique())
+    assert "Lebanon" in countries, f"Lebanon missing from remittance rows. Found: {countries}"
+    lbn = rem[rem["Country Name"] == "Lebanon"]
+    assert lbn["Year"].between(2010, 2024).any(), "No Lebanon remittance values in 2010-2024 range"
+
+
+run("remittances", check_remittances)
+
+
+# ---------------------------------------------------------------------------
 # Summary table
 # ---------------------------------------------------------------------------
 print("\n" + "=" * 60)

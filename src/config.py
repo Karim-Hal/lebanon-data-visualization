@@ -85,6 +85,7 @@ SERIES = {
     "gdp":          "NY.GDP.MKTP.CD",
     "gdp_pc":       "NY.GDP.PCAP.CD",
     "official_fx":  "PA.NUS.FCRF",
+    "remittances":  "BX.TRF.PWKR.DT.GD.ZS",
 }
 
 # NOTE: FP.CPI.TOTL.ZG values are already percentages — do NOT multiply by 100.
