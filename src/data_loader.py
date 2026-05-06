@@ -108,3 +108,10 @@ def load_u5mort_mena() -> pd.DataFrame:
         "RATE_PER_1000_NU": "rate_high",
     })
     return df
+
+
+@st.cache_data
+def load_unhcr_refugees() -> pd.DataFrame:
+    df = pd.read_csv(DATA / "unhcr_refugees_lebanon.csv", parse_dates=["as_of_date"])
+    df["registered_refugees"] = pd.to_numeric(df["registered_refugees"], errors="coerce").astype("Int64")
+    return df

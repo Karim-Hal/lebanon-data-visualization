@@ -318,6 +318,26 @@ run("remittances", check_remittances)
 
 
 # ---------------------------------------------------------------------------
+# UNHCR registered refugees by governorate
+# ---------------------------------------------------------------------------
+def check_unhcr():
+    path = DATA / "unhcr_refugees_lebanon.csv"
+    assert path.exists(), f"File not found: {path}"
+    df = pd.read_csv(path, parse_dates=["as_of_date"])
+    govs = set(df["governorate"].unique())
+    assert govs == ADMIN1_NORMALIZED, (
+        f"UNHCR governorates do not match IPC admin1_normalized. "
+        f"Missing: {ADMIN1_NORMALIZED - govs}. Extra: {govs - ADMIN1_NORMALIZED}."
+    )
+    assert df["registered_refugees"].notna().all(), "UNHCR rows have missing counts"
+    age_days = (pd.Timestamp.today() - df["as_of_date"].max()).days
+    assert age_days < 365 * 3, f"UNHCR snapshot is older than 3 years (age: {age_days} days)"
+
+
+run("unhcr_refugees", check_unhcr)
+
+
+# ---------------------------------------------------------------------------
 # Summary table
 # ---------------------------------------------------------------------------
 print("\n" + "=" * 60)
