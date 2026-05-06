@@ -821,54 +821,56 @@ def _fig_scatter(basket, exrate):
 
 
 def _fig_treemap(prices):
-    """Treemap: each basket commodity as a tile.
-    Area = latest price index value (so bigger tile = more inflation).
-    Each commodity gets a distinct palette color so they're all readable.
-    Label shows % inflation since 2019 rather than the raw index.
+    """Treemap of monthly basket cost share.
+    Hierarchy: Category -> Commodity. Tile area = monthly cost contribution
+    (equal-weighted basket: 1 unit per commodity x current USD price).
+    Color = % change in price index since 2019.
     """
+    from src.config import BASKET_CATEGORIES
+
     prices = _rebase_price_index(prices)
     df = (
         prices[prices["commodity"].isin(BASKET)]
-        .dropna(subset=["price_index"])
+        .dropna(subset=["price_index", "usdprice"])
         .sort_values("date")
         .groupby("commodity", as_index=False)
         .last()
     )
-    df["short"]      = df["commodity"].str.split("(").str[0].str.strip()
-    df["pct_change"] = (df["price_index"] - 100).round(0).astype(int)
-    df["year"]       = df["date"].dt.year.astype(str)
-
-    commodities = sorted(df["commodity"].unique())
-    # One distinct palette color per commodity — skip index 0 (crisis red) for
-    # the root tile so it doesn't clash; root gets the lighter card_bg.
-    color_map = {c: PALETTE[(i + 1) % len(PALETTE)] for i, c in enumerate(commodities)}
-    color_map["Basket"] = COLORS["card_bg"]
+    df["category"]    = df["commodity"].map(BASKET_CATEGORIES).fillna("Other")
+    df["short"]       = df["commodity"].str.split("(").str[0].str.strip()
+    df["pct_change"]  = (df["price_index"] - 100).round(0).astype(int)
+    df["cost_share"]  = df["usdprice"]
 
     fig = px.treemap(
         df,
-        path=[px.Constant("Basket"), "commodity"],
-        values="price_index",
-        color="commodity",
-        color_discrete_map=color_map,
-        custom_data=["short", "price_index", "pct_change", "year"],
+        path=[px.Constant("Basket"), "category", "commodity"],
+        values="cost_share",
+        color="pct_change",
+        color_continuous_scale=[
+            [0.0, COLORS["card_bg"]],
+            [0.5, PALETTE[1]],
+            [1.0, COLORS["crisis_red"]],
+        ],
+        range_color=(0, max(300, int(df["pct_change"].max() or 0))),
+        custom_data=["short", "price_index", "pct_change", "usdprice"],
     )
     fig.update_traces(
-        texttemplate="<b>%{customdata[0]}</b><br>+%{customdata[2]}% since 2019",
-        textfont=dict(family="DM Sans, sans-serif", size=13, color="#FFFFFF"),
-        marker_line_width=3,
+        texttemplate="<b>%{label}</b><br>+%{customdata[2]}% since 2019",
+        textfont=dict(family="DM Sans, sans-serif", size=12, color="#FFFFFF"),
+        marker_line_width=2,
         marker_line_color="white",
         hovertemplate=(
             "<b>%{customdata[0]}</b><br>"
             "Inflation since 2019: <b>+%{customdata[2]}%</b><br>"
-            "Price Index: %{customdata[1]:.0f} (2019 = 100)<br>"
-            "Latest data: %{customdata[3]}<extra></extra>"
+            "Latest USD price: $%{customdata[3]:.2f}<br>"
+            "Price index: %{customdata[1]:.0f} (2019=100)<extra></extra>"
         ),
     )
     fig.update_layout(
         **_BASE,
-        height=360,
+        height=380,
         margin=dict(l=10, r=10, t=10, b=10),
-        showlegend=False,
+        coloraxis_colorbar=dict(title="% Δ since 2019", ticksuffix="%", len=0.7),
     )
     return fig.to_json()
 
@@ -1731,11 +1733,11 @@ def _section_food(d):
         + callout +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Basket Commodity Inflation Snapshot</div>'
-        '<div class="chart-caption">Each tile represents one basket commodity. '
-        'Tile area is proportional to the latest price index value (2019 = 100) &mdash; '
-        'larger tiles have inflated more. Colour intensity follows the same scale. '
-        'Hover for exact index values.</div>'
+        '<div class="chart-title">Basket Cost Share &amp; Inflation</div>'
+        '<div class="chart-caption">Each tile represents one basket commodity, '
+        'grouped by food category. Tile area is proportional to current USD price '
+        '(equal-weighted basket). Colour shows percentage change in price index since 2019. '
+        'Larger tiles cost more today; redder tiles inflated more.</div>'
         + _plot_tag("treemap", treemap_json) +
         '</div>'
         '<p class="source-line">Sources: WFP VAM Food Price Monitoring '

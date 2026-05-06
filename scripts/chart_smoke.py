@@ -40,6 +40,18 @@ def assert_valid_plotly_json(fig_json, expected_min_traces=1, label=""):
 
 # Tests get registered here as new chart builders are added.
 
+def t_treemap_b():
+    from generate_report import _fig_treemap
+    from src.data_loader import load_wfp_prices
+    j = _fig_treemap(load_wfp_prices())
+    assert_valid_plotly_json(j, expected_min_traces=1, label="treemap_b")
+    obj = json.loads(j)
+    assert obj["data"][0]["type"] == "treemap", "treemap_b: not a treemap"
+    labels = obj["data"][0].get("labels", [])
+    assert len(labels) >= 6 + 4 + 1, f"treemap_b: too few tiles ({len(labels)})"
+
+smoke("treemap_b", t_treemap_b)
+
 if __name__ == "__main__":
     if not results:
         print("(no smoke tests registered yet)")
