@@ -67,6 +67,18 @@ BASKET = [
 ]
 
 # ---------------------------------------------------------------------------
+# Basket commodity → category mapping (for Treemap B)
+# ---------------------------------------------------------------------------
+BASKET_CATEGORIES = {
+    "Bread (pita)":                  "Cereals",
+    "Wheat flour":                   "Cereals",
+    "Rice (imported, Egyptian)":     "Cereals",
+    "Eggs":                          "Dairy & Eggs",
+    "Meat (chicken, whole, frozen)": "Proteins",
+    "Oil (sunflower)":               "Oils",
+}
+
+# ---------------------------------------------------------------------------
 # IPC population groups
 # ---------------------------------------------------------------------------
 POPULATION_GROUPS = [
