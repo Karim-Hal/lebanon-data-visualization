@@ -28,7 +28,7 @@ from src.config import (
 from src.data_loader import (
     load_basket_prices, load_exchange_rate, load_health,
     load_ipc_geo, load_ipc_population_groups,
-    load_u5mort_mena, load_wdi, load_wfp_prices,
+    load_u5mort_mena, load_unhcr_refugees, load_wdi, load_wfp_prices,
 )
 from src.metrics import (
     basket_price_index, gdp_contraction, lebanese_phase3_plus,
@@ -64,6 +64,7 @@ def load_all():
         ipc_pop= load_ipc_population_groups(),
         health = load_health(),
         u5mort = load_u5mort_mena(),
+        unhcr  = load_unhcr_refugees(),
     )
 
 # =============================================================================
@@ -1058,6 +1059,42 @@ _PHASE_COLS = {
     "Phase 4": ("Phase 4 percentage current", COLORS["ipc_phase_4"]),
     "Phase 5": ("Phase 5 percentage current", COLORS["ipc_phase_5"]),
 }
+
+
+def _fig_unhcr_choropleth(unhcr):
+    with open(GEOJSON_PATH) as f:
+        geojson = json.load(f)
+
+    df = unhcr.copy()
+    ml = df[df["governorate"] == "Mount Lebanon"]
+    if not ml.empty:
+        kj = ml.copy()
+        kj["governorate"] = "Keserwan-Jbeil"
+        df = pd.concat([df, kj], ignore_index=True)
+
+    as_of = pd.to_datetime(unhcr["as_of_date"]).max().strftime("%b %Y")
+
+    fig = px.choropleth_map(
+        df, geojson=geojson,
+        locations="governorate", featureidkey="properties.shapeName",
+        color="registered_refugees",
+        color_continuous_scale=[
+            [0.0, COLORS["card_bg"]],
+            [0.5, PALETTE[3]],
+            [1.0, PALETTE[0]],
+        ],
+        map_style="carto-positron",
+        center={"lat": 33.85, "lon": 35.86},
+        zoom=7, opacity=0.78,
+        labels={"registered_refugees": "Refugees"},
+        hover_name="governorate",
+        hover_data={"governorate": False, "registered_refugees": ":,"},
+    )
+    fig.update_layout(
+        **_BASE, height=440, margin=dict(l=0, r=0, t=0, b=0),
+        coloraxis_colorbar=dict(title="Refugees<br>(" + as_of + ")", tickformat=",", len=0.7),
+    )
+    return fig.to_json()
 
 
 def _fig_choropleth(geo_snap):
@@ -2058,6 +2095,7 @@ def _section_insecurity(d):
     geo     = d["ipc_geo"].copy()
     ipc_pop = d["ipc_pop"]
     prices  = d["prices"]
+    unhcr   = d["unhcr"]
 
     geo["gov"] = geo["admin1_normalized"].map(_IPC_TO_GOV)
 
@@ -2072,6 +2110,7 @@ def _section_insecurity(d):
     gov_bar_json  = _fig_gov_bar(prices, selected_year)
     treemap_a_json = _fig_treemap_insecurity(geo_snap, ipc_pop)
     poptime_json  = _fig_pop_group_time(ipc_pop)
+    unhcr_json    = _fig_unhcr_choropleth(unhcr)
     ipc_data_json = _build_ipc_data(d["ipc_geo"], prices)
 
     unique_dates = sorted(d["ipc_geo"]["analysis_date"].unique())
@@ -2110,7 +2149,7 @@ def _section_insecurity(d):
         'population group, and over time. Select a snapshot date to update charts that '
         'support filtering.</p>'
         + ipc_filter +
-        # Row 1: IPC choropleth | (placeholder donut — Task 13 replaces with UNHCR)
+        # Row 1: IPC choropleth | UNHCR refugees choropleth
         '<div class="g2">'
         '<div class="chart-card" style="margin-bottom:0">'
         '<div class="chart-title">IPC Phase 3+ by Governorate</div>'
@@ -2119,13 +2158,14 @@ def _section_insecurity(d):
         + _plot_tag("choropleth", choro_json) +
         '</div>'
         '<div class="chart-card" style="margin-bottom:0">'
-        '<div class="chart-title">Phase 3+ Population Composition (Latest)</div>'
-        '<div class="chart-caption">Population-group breakdown at most recent snapshot.</div>'
-        + _plot_tag("donut", donut_json) +
+        '<div class="chart-title">Registered Syrian Refugees by Governorate</div>'
+        '<div class="chart-caption">Lebanon hosts the world\'s highest per-capita refugee '
+        'population. Source: UNHCR Lebanon Operational Data (demo estimates).</div>'
+        + _plot_tag("unhcr_choropleth", unhcr_json) +
         '</div>'
         '</div>'
         '<div style="margin-bottom:22px"></div>'
-        # Row 2: Treemap A | Population-group time series
+        # Row 2: Treemap A | Population-group time series + donut companion
         '<div class="g2">'
         '<div class="chart-card" style="margin-bottom:0">'
         '<div class="chart-title">Phase 3+ Headcount &mdash; Governorate &times; Group</div>'
@@ -2140,6 +2180,12 @@ def _section_insecurity(d):
         '<div class="chart-caption">Each line tracks Phase 3+ over time. '
         'Marker size scales with absolute headcount in that snapshot.</div>'
         + _plot_tag("pop_group_time", poptime_json) +
+        '<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">'
+        '<div style="font-size:11px;color:var(--muted);font-weight:600;'
+        'text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">'
+        'Latest snapshot composition</div>'
+        + _plot_tag("donut", donut_json) +
+        '</div>'
         '</div>'
         '</div>'
         '<div style="margin-bottom:22px"></div>'

@@ -110,6 +110,15 @@ def t_pop_group_time():
 
 smoke("pop_group_time", t_pop_group_time)
 
+
+def t_unhcr_choropleth():
+    from generate_report import _fig_unhcr_choropleth
+    from src.data_loader import load_unhcr_refugees
+    j = _fig_unhcr_choropleth(load_unhcr_refugees())
+    assert_valid_plotly_json(j, expected_min_traces=1, label="unhcr_choropleth")
+
+smoke("unhcr_choropleth", t_unhcr_choropleth)
+
 if __name__ == "__main__":
     if not results:
         print("(no smoke tests registered yet)")
