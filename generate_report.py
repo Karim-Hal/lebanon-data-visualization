@@ -1122,12 +1122,12 @@ def _fig_donut(ipc_pop):
     )
     total = pop_latest["Phase 3+ number current"].sum()
     fig.update_layout(
-        **_BASE, height=420, margin=dict(l=20, r=20, t=20, b=20),
+        **_BASE, height=240, margin=dict(l=10, r=10, t=10, b=10),
         showlegend=False,
         annotations=[dict(
             text="<b>{:.2f}M</b><br>people".format(total / 1e6),
             x=0.5, y=0.5, showarrow=False,
-            font=dict(size=14, color=COLORS["deep_navy"], family="DM Sans, sans-serif"),
+            font=dict(size=12, color=COLORS["deep_navy"], family="DM Sans, sans-serif"),
         )],
     )
     return fig.to_json()
