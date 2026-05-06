@@ -1,0 +1,52 @@
+"""Lightweight smoke check for new chart figure builders.
+Asserts each function returns valid Plotly JSON with expected structure.
+Run: python scripts/chart_smoke.py
+"""
+import json
+import sys
+import traceback
+from pathlib import Path
+
+# Add project root to sys.path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Stub streamlit before any src imports
+from types import ModuleType
+_st = ModuleType("streamlit")
+_st.cache_data = lambda f: f
+sys.modules["streamlit"] = _st
+
+results = {}
+
+
+def smoke(name, fn):
+    try:
+        fn()
+        results[name] = ("✅", "PASS", "")
+    except AssertionError as e:
+        results[name] = ("❌", "FAIL", str(e))
+    except Exception as e:
+        results[name] = ("❌", "ERROR", f"{type(e).__name__}: {e}")
+        traceback.print_exc()
+
+
+def assert_valid_plotly_json(fig_json, expected_min_traces=1, label=""):
+    obj = json.loads(fig_json)
+    assert "data" in obj and "layout" in obj, f"{label}: missing data/layout"
+    assert len(obj["data"]) >= expected_min_traces, (
+        f"{label}: expected >= {expected_min_traces} traces, got {len(obj['data'])}"
+    )
+
+
+# Tests get registered here as new chart builders are added.
+
+if __name__ == "__main__":
+    if not results:
+        print("(no smoke tests registered yet)")
+        sys.exit(0)
+
+    print(f"\n{'='*64}\nCHART SMOKE RESULTS\n{'='*64}")
+    for name, (icon, status, msg) in results.items():
+        print(f"{icon} {name:<32} {status}  {msg}")
+    n_fail = sum(1 for _, s, _ in results.values() if s != "PASS")
+    sys.exit(0 if n_fail == 0 else 1)
