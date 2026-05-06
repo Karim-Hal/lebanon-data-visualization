@@ -75,6 +75,18 @@ def t_remittances():
 
 smoke("remittances", t_remittances)
 
+
+def t_inflation_ridge():
+    from generate_report import _fig_inflation_ridge
+    from src.data_loader import load_wdi
+    j = _fig_inflation_ridge(load_wdi())
+    assert_valid_plotly_json(j, expected_min_traces=3, label="inflation_ridge")
+    obj = json.loads(j)
+    types = {tr["type"] for tr in obj["data"]}
+    assert "violin" in types, f"inflation_ridge: expected violin traces. Got: {types}"
+
+smoke("inflation_ridge", t_inflation_ridge)
+
 if __name__ == "__main__":
     if not results:
         print("(no smoke tests registered yet)")

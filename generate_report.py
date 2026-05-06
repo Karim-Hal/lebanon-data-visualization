@@ -685,6 +685,49 @@ def _fig_inflation(wdi):
     return fig.to_json()
 
 
+def _fig_inflation_ridge(wdi):
+    """Stacked offset violins approximating a ridgeline.
+    One ridge per country; Lebanon at top in crisis red. X = inflation %, capped 300%.
+    """
+    inf = wdi[wdi["Series Code"] == SERIES["inflation"]].copy()
+    inf["Value"] = inf["Value"].clip(upper=300)
+
+    countries = ["Lebanon"] + [c for c in COUNTRY_COLORS if c != "Lebanon"]
+    countries = [c for c in countries if c in inf["Country Name"].unique()]
+
+    fig = go.Figure()
+    for i, country in enumerate(reversed(countries)):
+        sub = inf[inf["Country Name"] == country]
+        if sub.empty:
+            continue
+        col = COUNTRY_COLORS.get(country, "#888")
+        fig.add_trace(go.Violin(
+            x=sub["Value"], name=country,
+            orientation="h",
+            side="positive",
+            width=2.4,
+            points=False,
+            line=dict(color=col, width=1.5),
+            fillcolor=col,
+            opacity=0.45,
+            hovertemplate=(
+                "<b>" + country + "</b><br>Inflation: %{x:.1f}%<extra></extra>"
+            ),
+            spanmode="hard",
+        ))
+    fig.add_vline(x=0, line_color="#888", line_width=1, line_dash="dot")
+    fig.update_layout(
+        **_BASE, height=360, margin=dict(l=160, r=24, t=24, b=48),
+        showlegend=False,
+        violinmode="overlay",
+        xaxis=dict(title="Annual inflation (%, capped at 300%)",
+                   ticksuffix="%", gridcolor="#EEF1F5",
+                   range=[-20, 320]),
+        yaxis=dict(showgrid=False),
+    )
+    return fig.to_json()
+
+
 def _fig_inflation_heatmap(wdi):
     """Country × Year heatmap of annual inflation.
     Color scale is capped at 300% so Lebanon's 221% reads clearly even when
@@ -1720,7 +1763,7 @@ def _section_macro(d):
         rem_latest_pct, rem_latest_year = 0.0, 0
     remittances_json = _fig_remittances(wdi)
     gdp_json   = _fig_gdp_rate(wdi)
-    inf_json   = _fig_inflation(wdi)
+    ridge_json = _fig_inflation_ridge(wdi)
     heat_json  = _fig_inflation_heatmap(wdi)
     tbl_html   = _html_gdp_table(wdi)
 
@@ -1755,10 +1798,11 @@ def _section_macro(d):
         + _plot_tag("remittances", remittances_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Annual Inflation &mdash; Regional Comparison</div>'
-        '<div class="chart-caption">Consumer price inflation (% annual). '
-        "Lebanon's 2020&ndash;2023 surge dwarfs all regional peers. Syria data ends 2019.</div>"
-        + _plot_tag("inflation", inf_json) +
+        '<div class="chart-title">Inflation Distribution &mdash; Country Comparison</div>'
+        '<div class="chart-caption">Each ridge shows the distribution of annual inflation rates '
+        'observed for that country (2011&ndash;2024, capped at 300% for readability). '
+        "Lebanon's right tail dwarfs every regional peer in one frame.</div>"
+        + _plot_tag("inflation_ridge", ridge_json) +
         '</div>'
         '<div class="chart-card">'
         '<div class="chart-title">Inflation Heatmap &mdash; Country &times; Year</div>'
