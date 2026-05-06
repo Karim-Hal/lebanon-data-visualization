@@ -52,6 +52,17 @@ def t_treemap_b():
 
 smoke("treemap_b", t_treemap_b)
 
+
+def t_fx_spread():
+    from generate_report import _fig_fx_spread
+    from src.data_loader import load_wdi, load_exchange_rate
+    j = _fig_fx_spread(load_wdi(), load_exchange_rate())
+    assert_valid_plotly_json(j, expected_min_traces=2, label="fx_spread")
+    obj = json.loads(j)
+    assert obj["layout"]["yaxis"].get("type") == "log", "fx_spread: y-axis is not log"
+
+smoke("fx_spread", t_fx_spread)
+
 if __name__ == "__main__":
     if not results:
         print("(no smoke tests registered yet)")

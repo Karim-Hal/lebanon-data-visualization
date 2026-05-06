@@ -583,6 +583,53 @@ def _fig_gdp_rate(wdi):
     return fig.to_json()
 
 
+def _fig_fx_spread(wdi, exrate):
+    """FX divergence: official LBP/USD (annual, WDI) vs unofficial (monthly, WFP).
+    Y axis is log scale because the gap is multiplicative (~50x at peak).
+    """
+    off = (
+        wdi[(wdi["Country Name"] == "Lebanon") & (wdi["Series Code"] == SERIES["official_fx"])]
+        [["Year", "Value"]].dropna().sort_values("Year")
+    )
+    off = off.assign(date=pd.to_datetime(off["Year"].astype(str) + "-01-01"))
+
+    unof = (
+        exrate[exrate["commodity"] == "Exchange rate (unofficial)"]
+        .groupby("year_month", as_index=False)["price"].mean()
+    )
+    unof["date"] = pd.to_datetime(unof["year_month"])
+    unof = unof.sort_values("date")
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=off["date"], y=off["Value"], name="Official rate (WDI)",
+        mode="lines+markers",
+        line=dict(color=PALETTE[3], width=2, shape="hv"),
+        marker=dict(size=5),
+        hovertemplate="<b>%{x|%Y}</b><br>Official: %{y:,.0f} LBP/USD<extra></extra>",
+    ))
+    fig.add_trace(go.Scatter(
+        x=unof["date"], y=unof["price"], name="Unofficial rate (WFP)",
+        mode="lines",
+        line=dict(color=PALETTE[0], width=2.5),
+        fill="tonexty",
+        fillcolor="rgba(255,89,94,0.10)",
+        hovertemplate="<b>%{x|%b %Y}</b><br>Unofficial: %{y:,.0f} LBP/USD<extra></extra>",
+    ))
+    for date_str, label, color_key, dash in EVENTS:
+        col = _ecolor(color_key)
+        fig.add_vline(x=pd.Timestamp(date_str), line_dash=dash, line_color=col, line_width=1.2, opacity=0.7)
+
+    fig.update_layout(
+        **_BASE, height=420, margin=dict(l=70, r=24, t=44, b=48),
+        hovermode="x unified",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        xaxis=dict(title="Year", showgrid=False),
+        yaxis=dict(title="LBP per USD (log scale)", type="log", gridcolor="#EEF1F5"),
+    )
+    return fig.to_json()
+
+
 def _fig_inflation(wdi):
     inf_all = wdi[wdi["Series Code"] == SERIES["inflation"]].copy()
     fig = px.line(
@@ -1635,6 +1682,8 @@ def _section_landing(d):
 
 def _section_macro(d):
     wdi = d["wdi"]
+    exrate = d["exrate"]
+    spread_json = _fig_fx_spread(wdi, exrate)
     gdp_json   = _fig_gdp_rate(wdi)
     inf_json   = _fig_inflation(wdi)
     heat_json  = _fig_inflation_heatmap(wdi)
@@ -1655,6 +1704,13 @@ def _section_macro(d):
         '<div class="chart-caption">Left axis: GDP in USD billions &middot; '
         'Right axis: Official LBP per USD (World Bank)</div>'
         + _plot_tag("gdp_rate", gdp_json) +
+        '</div>'
+        '<div class="chart-card">'
+        '<div class="chart-title">Official vs Unofficial Exchange Rate &mdash; The "Two Lebanons"</div>'
+        '<div class="chart-caption">Y axis is logarithmic so the gap is readable across the full range. '
+        'The shaded gap between the two lines <strong>is</strong> the crisis &mdash; '
+        'at its peak, market traders charged ~50x the official rate.</div>'
+        + _plot_tag("fx_spread", spread_json) +
         '</div>'
         '<div class="chart-card">'
         '<div class="chart-title">Annual Inflation &mdash; Regional Comparison</div>'
