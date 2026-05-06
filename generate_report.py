@@ -677,15 +677,61 @@ def _html_gdp_table(wdi):
         .round(0)
     )
     years = [y for y in range(2011, 2025) if y in gdp_pc.columns]
+    gdp_pc = gdp_pc[years]
+
+    def cell_bg(v, vmin, vmax):
+        if pd.isna(v) or vmax == vmin:
+            return "transparent"
+        t = (v - vmin) / (vmax - vmin)
+        a = 0.05 + t * 0.30
+        return f"rgba(46, 116, 181, {a:.2f})"
+
+    def sparkline_svg(values, width=80, height=22):
+        vals = [v for v in values if pd.notna(v)]
+        if len(vals) < 2:
+            return ""
+        vmin, vmax = min(vals), max(vals)
+        rng = max(vmax - vmin, 1e-9)
+        n = len(values)
+        pts = []
+        for i, v in enumerate(values):
+            if pd.isna(v):
+                continue
+            x = (i / (n - 1)) * (width - 2) + 1
+            y = height - 1 - ((v - vmin) / rng) * (height - 2)
+            pts.append(f"{x:.1f},{y:.1f}")
+        path = "M" + " L".join(pts)
+        last_v = next((v for v in reversed(values) if pd.notna(v)), None)
+        last_color = "#ff595e" if last_v is not None and last_v < (vmin + rng * 0.5) else "#1982c4"
+        return (
+            f'<svg width="{width}" height="{height}" style="vertical-align:middle">'
+            f'<path d="{path}" stroke="{last_color}" stroke-width="1.5" fill="none"/>'
+            f'</svg>'
+        )
+
     rows_html = ""
     for country in gdp_pc.index:
         cls = ' class="lbn"' if country == "Lebanon" else ""
-        cells = "".join(
-            "<td>" + ("&mdash;" if pd.isna(gdp_pc.loc[country, yr]) else "${:,.0f}".format(gdp_pc.loc[country, yr])) + "</td>"
-            for yr in years
+        row_vals = [gdp_pc.loc[country, yr] for yr in years]
+        vmin = min(v for v in row_vals if pd.notna(v))
+        vmax = max(v for v in row_vals if pd.notna(v))
+        cells = ""
+        for v in row_vals:
+            if pd.isna(v):
+                cells += "<td>&mdash;</td>"
+            else:
+                bg = cell_bg(v, vmin, vmax)
+                cells += f'<td style="background:{bg}">${v:,.0f}</td>'
+        spark = sparkline_svg(row_vals)
+        rows_html += (
+            f'<tr{cls}><td>{country}</td>{cells}'
+            f'<td style="text-align:center">{spark}</td></tr>\n'
         )
-        rows_html += "<tr" + cls + "><td>" + country + "</td>" + cells + "</tr>\n"
-    header = "<th>Country</th>" + "".join("<th>" + str(y) + "</th>" for y in years)
+    header = (
+        "<th>Country</th>"
+        + "".join("<th>" + str(y) + "</th>" for y in years)
+        + "<th>Trend</th>"
+    )
     return (
         '<div class="tbl-wrap">'
         '<table class="data-tbl">'
