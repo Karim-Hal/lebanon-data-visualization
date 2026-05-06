@@ -1473,6 +1473,70 @@ def _fig_small_mult(health):
     return fig.to_json()
 
 
+def _fig_slope(health):
+    """Slope chart: each indicator has two points (2019 vs latest year),
+    color-coded by direction (green = improved, red = worsened).
+    """
+    h = _btsx(health)
+    rows = []
+    for short, code in _DB_CODES.items():
+        dfc = (
+            h[h["GHO (CODE)"] == code][["YEAR (DISPLAY)", "Numeric"]]
+            .dropna().sort_values("YEAR (DISPLAY)")
+        )
+        if len(dfc) < 2:
+            continue
+        pre = dfc[dfc["YEAR (DISPLAY)"] <= 2019]
+        if pre.empty:
+            continue
+        base   = pre.iloc[-1]
+        latest = dfc.iloc[-1]
+        if int(base["YEAR (DISPLAY)"]) == int(latest["YEAR (DISPLAY)"]):
+            continue
+        rows.append(dict(
+            indicator=short,
+            v_pre=float(base["Numeric"]),
+            y_pre=int(base["YEAR (DISPLAY)"]),
+            v_post=float(latest["Numeric"]),
+            y_post=int(latest["YEAR (DISPLAY)"]),
+        ))
+    if not rows:
+        fig = go.Figure(); fig.update_layout(**_BASE, height=360)
+        return fig.to_json()
+
+    fig = go.Figure()
+    for r in rows:
+        improved = r["v_post"] < r["v_pre"]
+        col = "#8ac926" if improved else "#ff595e"
+        fig.add_trace(go.Scatter(
+            x=[r["y_pre"], r["y_post"]],
+            y=[r["v_pre"], r["v_post"]],
+            mode="lines+markers+text",
+            name=r["indicator"],
+            line=dict(color=col, width=2.2),
+            marker=dict(size=8, color=col, line=dict(color="white", width=1)),
+            text=["", r["indicator"]],
+            textposition="middle right",
+            textfont=dict(family="DM Sans, sans-serif", size=11, color=col),
+            hovertemplate=(
+                "<b>" + r["indicator"] + "</b><br>"
+                "%{x}: %{y:.1f}<extra></extra>"
+            ),
+            showlegend=False,
+        ))
+    fig.update_layout(
+        **_BASE, height=440, margin=dict(l=60, r=160, t=24, b=48),
+        xaxis=dict(title="", showgrid=False, tickmode="array",
+                   tickvals=[min(r["y_pre"] for r in rows),
+                             max(r["y_post"] for r in rows)],
+                   ticktext=[str(min(r["y_pre"] for r in rows)),
+                             str(max(r["y_post"] for r in rows))]),
+        yaxis=dict(title="Indicator value", gridcolor="#EEF1F5"),
+        hovermode="closest",
+    )
+    return fig.to_json()
+
+
 def _fig_dumbbell(health):
     h = _btsx(health)
     rows = []
@@ -2215,7 +2279,7 @@ def _section_health(d):
     u5mort = d["u5mort"]
 
     lag_json    = _fig_lag(basket, health)
-    multi_json  = _fig_small_mult(health)
+    slope_json  = _fig_slope(health)
     db_json     = _fig_dumbbell(health)
     radar_json  = _fig_radar(health)
     mena_json   = _fig_mena(u5mort)
@@ -2269,10 +2333,12 @@ def _section_health(d):
         + _plot_tag("lag", lag_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Key Nutrition &amp; Mortality Trends</div>'
-        '<div class="chart-caption">Model-based estimates &middot; Both sexes &middot; '
-        'Lebanon (LBN) &middot; Data from 2000. Shaded region: 2020&ndash;2022 crisis window.</div>'
-        + _plot_tag("small_mult", multi_json) +
+        '<div class="chart-title">Health Indicators &mdash; 2019 vs Latest</div>'
+        '<div class="chart-caption">Slope chart of each indicator from its 2019 baseline '
+        'to the most recent reading. <span style="color:#8ac926;font-weight:600">Green</span> '
+        '= improved (lower-is-better), <span style="color:#ff595e;font-weight:600">red</span> '
+        '= worsened.</div>'
+        + _plot_tag("slope", slope_json) +
         '</div>'
         '<div class="chart-card">'
         '<div class="chart-title">Lebanon Child Health: Before &amp; After the Economic Collapse</div>'

@@ -119,6 +119,15 @@ def t_unhcr_choropleth():
 
 smoke("unhcr_choropleth", t_unhcr_choropleth)
 
+
+def t_slope():
+    from generate_report import _fig_slope
+    from src.data_loader import load_health
+    j = _fig_slope(load_health())
+    assert_valid_plotly_json(j, expected_min_traces=2, label="slope")
+
+smoke("slope", t_slope)
+
 if __name__ == "__main__":
     if not results:
         print("(no smoke tests registered yet)")
