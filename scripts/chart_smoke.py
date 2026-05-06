@@ -63,6 +63,18 @@ def t_fx_spread():
 
 smoke("fx_spread", t_fx_spread)
 
+
+def t_remittances():
+    from generate_report import _fig_remittances
+    from src.data_loader import load_wdi
+    j = _fig_remittances(load_wdi())
+    assert_valid_plotly_json(j, expected_min_traces=1, label="remittances")
+    obj = json.loads(j)
+    countries = {tr["name"] for tr in obj["data"]}
+    assert "Lebanon" in countries, f"remittances: Lebanon trace missing. Got: {countries}"
+
+smoke("remittances", t_remittances)
+
 if __name__ == "__main__":
     if not results:
         print("(no smoke tests registered yet)")

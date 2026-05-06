@@ -630,6 +630,33 @@ def _fig_fx_spread(wdi, exrate):
     return fig.to_json()
 
 
+def _fig_remittances(wdi):
+    df = wdi[wdi["Series Code"] == SERIES["remittances"]].copy()
+    df = df.sort_values(["Country Name", "Year"])
+
+    fig = px.line(
+        df, x="Year", y="Value", color="Country Name",
+        color_discrete_map=COUNTRY_COLORS,
+        labels={"Value": "Remittances (% of GDP)", "Year": "", "Country Name": "Country"},
+        markers=True,
+    )
+    for tr in fig.data:
+        is_lbn = tr.name == "Lebanon"
+        tr.update(line=dict(width=3 if is_lbn else 2),
+                  marker=dict(size=5 if is_lbn else 4),
+                  hovertemplate=(
+                      "<b>" + tr.name + "</b><br>%{x}: %{y:.1f}%<extra></extra>"
+                  ))
+    fig.update_layout(
+        **_BASE, height=380, margin=dict(l=60, r=24, t=44, b=48),
+        hovermode="x unified",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        yaxis=dict(ticksuffix="%", gridcolor="#EEF1F5"),
+        xaxis=dict(showgrid=False, dtick=2),
+    )
+    return fig.to_json()
+
+
 def _fig_inflation(wdi):
     inf_all = wdi[wdi["Series Code"] == SERIES["inflation"]].copy()
     fig = px.line(
@@ -1684,6 +1711,14 @@ def _section_macro(d):
     wdi = d["wdi"]
     exrate = d["exrate"]
     spread_json = _fig_fx_spread(wdi, exrate)
+    rem_lbn = wdi[(wdi["Country Name"] == "Lebanon") & (wdi["Series Code"] == SERIES["remittances"])]
+    if not rem_lbn.empty:
+        rem_latest_row = rem_lbn.sort_values("Year").iloc[-1]
+        rem_latest_pct = float(rem_latest_row["Value"])
+        rem_latest_year = int(rem_latest_row["Year"])
+    else:
+        rem_latest_pct, rem_latest_year = 0.0, 0
+    remittances_json = _fig_remittances(wdi)
     gdp_json   = _fig_gdp_rate(wdi)
     inf_json   = _fig_inflation(wdi)
     heat_json  = _fig_inflation_heatmap(wdi)
@@ -1711,6 +1746,13 @@ def _section_macro(d):
         'The shaded gap between the two lines <strong>is</strong> the crisis &mdash; '
         'at its peak, market traders charged ~50x the official rate.</div>'
         + _plot_tag("fx_spread", spread_json) +
+        '</div>'
+        '<div class="chart-card">'
+        '<div class="chart-title">Personal Remittances &mdash; % of GDP</div>'
+        '<div class="chart-caption">In ' + str(rem_latest_year) + ', remittances equalled '
+        '<strong>' + "{:.1f}%".format(rem_latest_pct) + '</strong> of Lebanon\'s GDP &mdash; '
+        'among the highest in the world. The diaspora is what kept Lebanon from total collapse.</div>'
+        + _plot_tag("remittances", remittances_json) +
         '</div>'
         '<div class="chart-card">'
         '<div class="chart-title">Annual Inflation &mdash; Regional Comparison</div>'
