@@ -766,34 +766,6 @@ def _fig_remittances(wdi):
     return fig.to_json()
 
 
-def _fig_inflation(wdi):
-    inf_all = wdi[wdi["Series Code"] == SERIES["inflation"]].copy()
-    fig = px.line(
-        inf_all.sort_values(["Country Name", "Year"]),
-        x="Year", y="Value",
-        color="Country Name",
-        facet_col="Country Name", facet_col_wrap=3,
-        color_discrete_map=COUNTRY_COLORS,
-        labels={"Value": "Inflation (%)", "Year": ""},
-        markers=True,
-    )
-    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-    fig.for_each_annotation(
-        lambda a: a.update(font=dict(color=PALETTE[0], size=12, family="DM Sans, sans-serif"))
-        if a.text == "Lebanon"
-        else a.update(font=dict(color=COLORS["deep_navy"], size=11, family="DM Sans, sans-serif"))
-    )
-    for date_str, _, color_key, dash in EVENTS:
-        yr = pd.Timestamp(date_str).year + (pd.Timestamp(date_str).month - 1) / 12
-        fig.add_vline(x=yr, line_dash=dash, line_color=_ecolor(color_key), line_width=1, opacity=0.6)
-    fig.update_yaxes(matches=None, showticklabels=True, ticksuffix="%", gridcolor="#EEF1F5")
-    fig.update_xaxes(dtick=3, tickangle=-45, showgrid=False)
-    fig.update_traces(marker=dict(size=4), line=dict(width=2))
-    fig.update_layout(**_BASE, height=500, showlegend=False,
-                      margin=dict(l=40, r=20, t=60, b=40))
-    return fig.to_json()
-
-
 def _fig_inflation_ridge(wdi):
     """Stacked offset violins approximating a ridgeline.
     One ridge per country; Lebanon at top in crisis red. X = inflation %, capped 300%.
@@ -1461,14 +1433,6 @@ def _fig_gov_bar(prices, selected_year):
 
 
 # Health constants
-_MULTI_CODES = {
-    "Stunting prevalence (%)":       "NUTSTUNTINGPREV",
-    "Anaemia in children (%)":       "NUTRITION_ANAEMIA_CHILDREN_PREV",
-    "Infant mortality (per 1,000)":  "MDG_0000000001",
-    "Under-5 mortality (per 1,000)": "MDG_0000000007",
-}
-_MULTI_COLORS = ["#ff595e", "#ffca3a", "#1982c4", "#6a4c93"]
-
 _DB_CODES = {
     "Under-5 mortality":    "MDG_0000000007",
     "Infant mortality":     "MDG_0000000001",
@@ -1546,38 +1510,6 @@ def _fig_lag(basket, health):
     fig.update_xaxes(showgrid=False, row=1, col=1)
     fig.update_layout(**_BASE, height=520, margin=dict(l=60, r=24, t=48, b=48),
                       showlegend=False, hovermode="x unified")
-    return fig.to_json()
-
-
-def _fig_small_mult(health):
-    h = _btsx(health)
-    fig = make_subplots(rows=2, cols=2,
-                        subplot_titles=list(_MULTI_CODES.keys()),
-                        vertical_spacing=0.14, horizontal_spacing=0.1)
-    for (title, code), (row, col), color in zip(
-        _MULTI_CODES.items(), [(1, 1), (1, 2), (2, 1), (2, 2)], _MULTI_COLORS
-    ):
-        df_m = (
-            h[h["GHO (CODE)"] == code][["YEAR (DISPLAY)", "Numeric"]]
-            .dropna().sort_values("YEAR (DISPLAY)")
-        )
-        if df_m.empty:
-            continue
-        fig.add_trace(go.Scatter(
-            x=df_m["YEAR (DISPLAY)"], y=df_m["Numeric"],
-            mode="lines+markers", line=dict(color=color, width=2),
-            marker=dict(size=4), showlegend=False,
-            hovertemplate="<b>%{x}</b><br>%{y:.2f}<extra></extra>",
-        ), row=row, col=col)
-        yr_min_m = int(df_m["YEAR (DISPLAY)"].min())
-        yr_max_m = int(df_m["YEAR (DISPLAY)"].max())
-        if yr_min_m <= 2020 <= yr_max_m:
-            fig.add_vrect(x0=2020, x1=min(2022, yr_max_m),
-                          fillcolor=PALETTE[1], opacity=0.07, line_width=0,
-                          row=row, col=col)
-    fig.update_xaxes(dtick=5, showgrid=False)
-    fig.update_yaxes(gridcolor="#EEF1F5")
-    fig.update_layout(**_BASE, height=520, margin=dict(l=40, r=20, t=56, b=40))
     return fig.to_json()
 
 
@@ -1774,96 +1706,6 @@ def _fig_mena(u5mort):
         yaxis=dict(title="Under-5 mortality (per 1,000 live births)", gridcolor="#EEF1F5"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         hovermode="x unified",
-    )
-    return fig.to_json()
-
-
-def _fig_radar(health):
-    """Radar/spider chart comparing Lebanon's child health profile pre-crisis (≤2019)
-    vs post-crisis (2020+).  Each axis is one indicator normalised to [0,1] relative
-    to its own range, so the two polygons are directly comparable despite different units.
-    Larger polygon area = worse outcome (all indicators are "lower is better").
-    """
-    h = _btsx(health)
-    _RADAR_CODES = {
-        "Stunting":       "NUTSTUNTINGPREV",
-        "Wasting":        "NUTRITION_WH_2",
-        "Underweight":    "NUTRITION_WA_2",
-        "Anaemia":        "NUTRITION_ANAEMIA_CHILDREN_PREV",
-        "Infant Mort.":   "MDG_0000000001",
-        "Under-5 Mort.":  "MDG_0000000007",
-    }
-    pre_abs, post_abs, labels = [], [], []
-    for label, code in _RADAR_CODES.items():
-        dfc = (
-            h[h["GHO (CODE)"] == code][["YEAR (DISPLAY)", "Numeric"]]
-            .dropna().sort_values("YEAR (DISPLAY)")
-        )
-        if dfc.empty:
-            continue
-        pre_rows  = dfc[dfc["YEAR (DISPLAY)"] <= 2019]
-        post_rows = dfc[dfc["YEAR (DISPLAY)"] >= 2020]
-        if pre_rows.empty or post_rows.empty:
-            continue
-        pre_abs.append(float(pre_rows.iloc[-1]["Numeric"]))
-        post_abs.append(float(post_rows.iloc[-1]["Numeric"]))
-        labels.append(label)
-
-    if len(labels) < 3:
-        fig = go.Figure()
-        fig.add_annotation(text="Insufficient data for radar chart",
-                           xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False)
-        fig.update_layout(**_BASE, height=420)
-        return fig.to_json()
-
-    # Normalise per-indicator to [0,1] so axes are comparable
-    norm_pre, norm_post = [], []
-    for p, q in zip(pre_abs, post_abs):
-        m = max(p, q, 1e-9)
-        norm_pre.append(p / m)
-        norm_post.append(q / m)
-
-    # Close the polygon loop
-    cats   = labels + [labels[0]]
-    r_pre  = norm_pre  + [norm_pre[0]]
-    r_post = norm_post + [norm_post[0]]
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatterpolar(
-        r=r_pre, theta=cats,
-        fill="toself",
-        name="Pre-crisis (≤ 2019)",
-        line=dict(color=PALETTE[3], width=2.5),
-        fillcolor="rgba(25,130,196,0.10)",
-        hovertemplate="<b>%{theta}</b><br>Pre-crisis (normalised): %{r:.2f}<extra></extra>",
-    ))
-    fig.add_trace(go.Scatterpolar(
-        r=r_post, theta=cats,
-        fill="toself",
-        name="Post-crisis (2020+)",
-        line=dict(color=PALETTE[0], width=2.5),
-        fillcolor="rgba(255,89,94,0.13)",
-        hovertemplate="<b>%{theta}</b><br>Post-crisis (normalised): %{r:.2f}<extra></extra>",
-    ))
-    fig.update_layout(
-        **_BASE,
-        height=460,
-        margin=dict(l=60, r=60, t=44, b=90),
-        polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, 1],
-                showticklabels=False,
-                gridcolor="#EEF1F5",
-                linecolor="#DDDDDD",
-            ),
-            angularaxis=dict(gridcolor="#EEF1F5", linecolor="#DDDDDD"),
-            bgcolor="white",
-        ),
-        legend=dict(
-            orientation="h", yanchor="top", y=-0.05,
-            xanchor="center", x=0.5,
-        ),
     )
     return fig.to_json()
 
