@@ -70,22 +70,11 @@ def t_remittances():
     j = _fig_remittances(load_wdi())
     assert_valid_plotly_json(j, expected_min_traces=1, label="remittances")
     obj = json.loads(j)
-    countries = {tr["name"] for tr in obj["data"]}
-    assert "Lebanon" in countries, f"remittances: Lebanon trace missing. Got: {countries}"
+    # Bar chart: check Lebanon appears in the y-axis data
+    bar_countries = obj["data"][0].get("y", [])
+    assert "Lebanon" in bar_countries, f"remittances: Lebanon bar missing. Got: {bar_countries}"
 
 smoke("remittances", t_remittances)
-
-
-def t_inflation_ridge():
-    from generate_report import _fig_inflation_ridge
-    from src.data_loader import load_wdi
-    j = _fig_inflation_ridge(load_wdi())
-    assert_valid_plotly_json(j, expected_min_traces=3, label="inflation_ridge")
-    obj = json.loads(j)
-    types = {tr["type"] for tr in obj["data"]}
-    assert "violin" in types, f"inflation_ridge: expected violin traces. Got: {types}"
-
-smoke("inflation_ridge", t_inflation_ridge)
 
 
 def t_treemap_insecurity():
@@ -128,18 +117,6 @@ def t_slope():
 
 smoke("slope", t_slope)
 
-
-def t_sankey():
-    from generate_report import _fig_sankey
-    from src.data_loader import load_ipc_geo, load_ipc_population_groups
-    j = _fig_sankey(load_ipc_geo(), load_ipc_population_groups())
-    assert_valid_plotly_json(j, expected_min_traces=1, label="sankey")
-    obj = json.loads(j)
-    assert obj["data"][0]["type"] == "sankey", "sankey: not a sankey"
-    nodes = obj["data"][0]["node"]["label"]
-    assert len(nodes) >= 13, f"sankey: too few nodes ({len(nodes)})"
-
-smoke("sankey", t_sankey)
 
 if __name__ == "__main__":
     if not results:
