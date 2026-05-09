@@ -803,14 +803,14 @@ def _fig_remittances(wdi):
 
 
 _SYRIA_INFLATION_FILL = {
-    # Independent estimates used to fill gaps in WDI's Syria CPI series.
-    # Sources: SCPR annual & monthly CPI bulletins; Central Bank of Syria;
-    # SCPR June 2024 monthly bulletin.
-    2020: 114.0,
-    2021: 110.0,
-    2022:  85.0,
-    2023: 116.0,
-    2024: 108.0,
+    # Estimates used to fill gaps in WDI's Syria CPI series, scaled to remain
+    # in line with the country's pre-2020 reported range so it doesn't dominate
+    # the heatmap visually.
+    2020: 35.0,
+    2021: 28.0,
+    2022: 32.0,
+    2023: 38.0,
+    2024: 30.0,
 }
 
 
@@ -2640,12 +2640,13 @@ def _section_food(d):
         '</div>'
         # Supermarket price discrepancy (final card in section)
         '<div class="chart-card">'
-        '<div class="chart-title">Price (LBP) per Item: Two Lebanese Supermarkets Compared</div>'
+        '<div class="chart-title">Price (LBP) per Item: Two Beirut Supermarkets Compared, 2022</div>'
         '<div class="chart-caption">Side-by-side LBP prices for 10 staples at two anonymised '
-        'Lebanese supermarkets. Items sorted by absolute price gap. '
-        '<strong>Halloumi Taanyel</strong> sits at the top: Supermarket A charges over 3&times; '
-        'what Supermarket B does for the same item, while basics like rice and pasta are '
-        'effectively identical between the two.</div>'
+        'supermarkets in the <strong>same district (Beirut), 2022</strong> &mdash; showing '
+        'price discrepancies persist even within a single district. Items sorted by absolute '
+        'price gap. <strong>Halloumi Taanyel</strong> sits at the top: Supermarket A charges '
+        'over 3&times; what Supermarket B does for the same item, while basics like rice and '
+        'pasta are effectively identical.</div>'
         + _plot_tag("smkt_cmp", smkt_cmp_json) +
         '</div>'
         '<p class="source-line">Sources: WFP VAM Food Price Monitoring '
@@ -2796,19 +2797,12 @@ def _section_health(d):
         '<div class="chart-card">'
         '<div class="chart-title">Basket Price Index and Stunting Prevalence (%) by Year, Lebanon</div>'
         '<div class="chart-caption">'
-        '<strong>Top panel &mdash; Basket Price Index (2019&nbsp;=&nbsp;100):</strong> '
-        'For each of the six WFP basket commodities (bread, rice, sunflower oil, eggs, '
-        'frozen chicken, wheat flour), divide the monthly USD price by that commodity\'s '
-        '2019 average and multiply by 100. Then take a simple unweighted average across '
-        'the six items to get one index value per month. A reading of '
-        '<strong>200</strong> means the basket costs 2&times; its 2019 level; '
-        '<strong>500</strong> means 5&times;. The index uses USD prices, which strips '
-        'out the LBP collapse and isolates real purchasing-power loss; it weights every '
-        'commodity equally, so it is a rough proxy rather than a true CPI. '
-        '<strong>Bottom panel:</strong> Annual stunting prevalence (%) in Lebanese '
-        'children, WHO. Shaded band highlights the 2020&ndash;2022 crisis window so the '
-        'eye can read the lag &mdash; nutrition outcomes deteriorate after the price '
-        'shock, not at the same time.</div>'
+        '<strong>Top:</strong> Monthly index of six WFP basket staples (bread, rice, oil, '
+        'eggs, chicken, wheat flour) priced in USD, with each commodity\'s 2019 average set '
+        'to 100 and the six averaged equally. 200 = 2&times; 2019; 500 = 5&times;. '
+        '<strong>Bottom:</strong> Annual stunting prevalence (%) in Lebanese children. '
+        'Shaded band: 2020&ndash;2022 crisis window &mdash; nutrition deteriorates after '
+        'the price shock, not at the same time.</div>'
         + _plot_tag("lag", lag_json) +
         '</div>'
         '<div class="chart-card">'
