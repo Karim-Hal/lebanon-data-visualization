@@ -4,7 +4,7 @@ Lebanon,LBN,GDP per capita (current US$),NY.GDP.PCAP.CD,2011 [YR2011],7834.96257
 Lebanon,LBN,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2011 [YR2011],1507.5,2011
 Lebanon,LBN,GDP (current US$),NY.GDP.MKTP.CD,2011 [YR2011],39927125961.5257,2011
 Jordan,JOR,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2011 [YR2011],4.1624416292779,2011
-Jordan,JOR,GDP per capita (current US$),NY.GDP.PCAP.CD,2011 [YR2011],3946.8550385552453,2011
+Jordan,JOR,GDP per capita (current US$),NY.GDP.PCAP.CD,2011 [YR2011],3946.855038555245,2011
 Jordan,JOR,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2011 [YR2011],0.71,2011
 Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2011 [YR2011],29524149154.92958,2011
 "Egypt, Arab Rep.",EGY,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2011 [YR2011],10.0649259874818,2011
@@ -12,7 +12,7 @@ Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2011 [YR2011],29524149154.92958,2011
 "Egypt, Arab Rep.",EGY,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2011 [YR2011],5.932827651515152,2011
 "Egypt, Arab Rep.",EGY,GDP (current US$),NY.GDP.MKTP.CD,2011 [YR2011],235989672977.6248,2011
 Syrian Arab Republic,SYR,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2011 [YR2011],4.7531638888563,2011
-Syrian Arab Republic,SYR,GDP per capita (current US$),NY.GDP.PCAP.CD,2011 [YR2011],2952.1434937225717,2011
+Syrian Arab Republic,SYR,GDP per capita (current US$),NY.GDP.PCAP.CD,2011 [YR2011],2952.143493722572,2011
 Syrian Arab Republic,SYR,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2011 [YR2011],48.3366666666667,2011
 Syrian Arab Republic,SYR,GDP (current US$),NY.GDP.MKTP.CD,2011 [YR2011],67539428159.44738,2011
 Saudi Arabia,SAU,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2011 [YR2011],5.826216373940421,2011
@@ -36,7 +36,7 @@ Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2012 [YR2012],31634561690.140846,201
 "Egypt, Arab Rep.",EGY,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2012 [YR2012],6.056058333333332,2012
 "Egypt, Arab Rep.",EGY,GDP (current US$),NY.GDP.MKTP.CD,2012 [YR2012],279116666666.6667,2012
 Syrian Arab Republic,SYR,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2012 [YR2012],36.70229533641389,2012
-Syrian Arab Republic,SYR,GDP per capita (current US$),NY.GDP.PCAP.CD,2012 [YR2012],1897.6611501869634,2012
+Syrian Arab Republic,SYR,GDP per capita (current US$),NY.GDP.PCAP.CD,2012 [YR2012],1897.6611501869636,2012
 Syrian Arab Republic,SYR,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2012 [YR2012],64.5808333333333,2012
 Syrian Arab Republic,SYR,GDP (current US$),NY.GDP.MKTP.CD,2012 [YR2012],43190318032.56269,2012
 Saudi Arabia,SAU,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2012 [YR2012],2.866270299050528,2012
@@ -62,7 +62,7 @@ Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2013 [YR2013],34454440140.84507,2013
 Syrian Arab Republic,SYR,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2013 [YR2013],40.03183782907232,2013
 Syrian Arab Republic,SYR,GDP per capita (current US$),NY.GDP.PCAP.CD,2013 [YR2013],985.8926692270542,2013
 Syrian Arab Republic,SYR,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2013 [YR2013],108.733333333333,2013
-Syrian Arab Republic,SYR,GDP (current US$),NY.GDP.MKTP.CD,2013 [YR2013],21361254635.051037,2013
+Syrian Arab Republic,SYR,GDP (current US$),NY.GDP.MKTP.CD,2013 [YR2013],21361254635.05104,2013
 Saudi Arabia,SAU,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2013 [YR2013],3.511042097998568,2013
 Saudi Arabia,SAU,GDP per capita (current US$),NY.GDP.PCAP.CD,2013 [YR2013],27865.465604962024,2013
 Saudi Arabia,SAU,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2013 [YR2013],3.75,2013
@@ -86,13 +86,13 @@ Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2014 [YR2014],36847643521.12676,2014
 Syrian Arab Republic,SYR,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2014 [YR2014],10.92711418042969,2014
 Syrian Arab Republic,SYR,GDP per capita (current US$),NY.GDP.PCAP.CD,2014 [YR2014],1060.5910588685424,2014
 Syrian Arab Republic,SYR,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2014 [YR2014],154.13,2014
-Syrian Arab Republic,SYR,GDP (current US$),NY.GDP.MKTP.CD,2014 [YR2014],21502061465.949757,2014
+Syrian Arab Republic,SYR,GDP (current US$),NY.GDP.MKTP.CD,2014 [YR2014],21502061465.94976,2014
 Saudi Arabia,SAU,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2014 [YR2014],2.241853487790634,2014
 Saudi Arabia,SAU,GDP per capita (current US$),NY.GDP.PCAP.CD,2014 [YR2014],27805.48503194224,2014
 Saudi Arabia,SAU,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2014 [YR2014],3.75,2014
 Saudi Arabia,SAU,GDP (current US$),NY.GDP.MKTP.CD,2014 [YR2014],787153066666.6666,2014
 United Arab Emirates,ARE,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2014 [YR2014],2.346268656716426,2014
-United Arab Emirates,ARE,GDP per capita (current US$),NY.GDP.PCAP.CD,2014 [YR2014],52725.235840793444,2014
+United Arab Emirates,ARE,GDP per capita (current US$),NY.GDP.PCAP.CD,2014 [YR2014],52725.23584079344,2014
 United Arab Emirates,ARE,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2014 [YR2014],3.6725,2014
 United Arab Emirates,ARE,GDP (current US$),NY.GDP.MKTP.CD,2014 [YR2014],424935874744.7243,2014
 Lebanon,LBN,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2015 [YR2015],-3.749145247996286,2015
@@ -102,9 +102,9 @@ Lebanon,LBN,GDP (current US$),NY.GDP.MKTP.CD,2015 [YR2015],49929337836.81592,201
 Jordan,JOR,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2015 [YR2015],-0.876851359704049,2015
 Jordan,JOR,GDP per capita (current US$),NY.GDP.PCAP.CD,2015 [YR2015],4042.756780975546,2015
 Jordan,JOR,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2015 [YR2015],0.71,2015
-Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2015 [YR2015],38587017887.323944,2015
+Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2015 [YR2015],38587017887.32394,2015
 "Egypt, Arab Rep.",EGY,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2015 [YR2015],10.370490343517,2015
-"Egypt, Arab Rep.",EGY,GDP per capita (current US$),NY.GDP.PCAP.CD,2015 [YR2015],3306.9815941414076,2015
+"Egypt, Arab Rep.",EGY,GDP per capita (current US$),NY.GDP.PCAP.CD,2015 [YR2015],3306.981594141408,2015
 "Egypt, Arab Rep.",EGY,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2015 [YR2015],7.691258333333335,2015
 "Egypt, Arab Rep.",EGY,GDP (current US$),NY.GDP.MKTP.CD,2015 [YR2015],329366576819.407,2015
 Syrian Arab Republic,SYR,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2015 [YR2015],38.46114295997329,2015
@@ -148,7 +148,7 @@ Lebanon,LBN,GDP per capita (current US$),NY.GDP.PCAP.CD,2017 [YR2017],8608.21084
 Lebanon,LBN,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2017 [YR2017],1507.5,2017
 Lebanon,LBN,GDP (current US$),NY.GDP.MKTP.CD,2017 [YR2017],53027680685.90382,2017
 Jordan,JOR,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2017 [YR2017],3.323894475760973,2017
-Jordan,JOR,GDP per capita (current US$),NY.GDP.PCAP.CD,2017 [YR2017],4065.6162874938427,2017
+Jordan,JOR,GDP per capita (current US$),NY.GDP.PCAP.CD,2017 [YR2017],4065.6162874938423,2017
 Jordan,JOR,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2017 [YR2017],0.71,2017
 Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2017 [YR2017],41608435915.49296,2017
 "Egypt, Arab Rep.",EGY,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2017 [YR2017],29.50660839400387,2017
@@ -158,7 +158,7 @@ Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2017 [YR2017],41608435915.49296,2017
 Syrian Arab Republic,SYR,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2017 [YR2017],18.07526962817711,2017
 Syrian Arab Republic,SYR,GDP per capita (current US$),NY.GDP.PCAP.CD,2017 [YR2017],851.5020052541528,2017
 Syrian Arab Republic,SYR,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2017 [YR2017],492.610833333333,2017
-Syrian Arab Republic,SYR,GDP (current US$),NY.GDP.MKTP.CD,2017 [YR2017],16369843352.345343,2017
+Syrian Arab Republic,SYR,GDP (current US$),NY.GDP.MKTP.CD,2017 [YR2017],16369843352.345345,2017
 Saudi Arabia,SAU,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2017 [YR2017],-0.8348457350272463,2017
 Saudi Arabia,SAU,GDP per capita (current US$),NY.GDP.PCAP.CD,2017 [YR2017],23929.290713598155,2017
 Saudi Arabia,SAU,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2017 [YR2017],3.75,2017
@@ -166,7 +166,7 @@ Saudi Arabia,SAU,GDP (current US$),NY.GDP.MKTP.CD,2017 [YR2017],741266133333.333
 United Arab Emirates,ARE,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2017 [YR2017],1.96682557818842,2017
 United Arab Emirates,ARE,GDP per capita (current US$),NY.GDP.PCAP.CD,2017 [YR2017],43733.61922874352,2017
 United Arab Emirates,ARE,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2017 [YR2017],3.6725,2017
-United Arab Emirates,ARE,GDP (current US$),NY.GDP.MKTP.CD,2017 [YR2017],403365010211.02795,2017
+United Arab Emirates,ARE,GDP (current US$),NY.GDP.MKTP.CD,2017 [YR2017],403365010211.028,2017
 Lebanon,LBN,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2018 [YR2018],6.076989078896069,2018
 Lebanon,LBN,GDP per capita (current US$),NY.GDP.PCAP.CD,2018 [YR2018],9174.536662047589,2018
 Lebanon,LBN,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2018 [YR2018],1507.5,2018
@@ -199,7 +199,7 @@ Jordan,JOR,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2019 [YR2019],
 Jordan,JOR,GDP per capita (current US$),NY.GDP.PCAP.CD,2019 [YR2019],4170.114400346496,2019
 Jordan,JOR,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2019 [YR2019],0.71,2019
 Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2019 [YR2019],44503006338.02817,2019
-"Egypt, Arab Rep.",EGY,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2019 [YR2019],9.152799593248037,2019
+"Egypt, Arab Rep.",EGY,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2019 [YR2019],9.152799593248035,2019
 "Egypt, Arab Rep.",EGY,GDP per capita (current US$),NY.GDP.PCAP.CD,2019 [YR2019],2962.9889202300265,2019
 "Egypt, Arab Rep.",EGY,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2019 [YR2019],16.77058184287632,2019
 "Egypt, Arab Rep.",EGY,GDP (current US$),NY.GDP.MKTP.CD,2019 [YR2019],318678815489.74945,2019
@@ -212,7 +212,7 @@ Saudi Arabia,SAU,GDP per capita (current US$),NY.GDP.PCAP.CD,2019 [YR2019],29566
 Saudi Arabia,SAU,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2019 [YR2019],3.75,2019
 Saudi Arabia,SAU,GDP (current US$),NY.GDP.MKTP.CD,2019 [YR2019],888890133333.3334,2019
 United Arab Emirates,ARE,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2019 [YR2019],-1.931081147821727,2019
-United Arab Emirates,ARE,GDP per capita (current US$),NY.GDP.PCAP.CD,2019 [YR2019],45938.607358199384,2019
+United Arab Emirates,ARE,GDP per capita (current US$),NY.GDP.PCAP.CD,2019 [YR2019],45938.60735819938,2019
 United Arab Emirates,ARE,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2019 [YR2019],3.6725,2019
 United Arab Emirates,ARE,GDP (current US$),NY.GDP.MKTP.CD,2019 [YR2019],433926208304.96936,2019
 Lebanon,LBN,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2020 [YR2020],84.86433304720406,2020
@@ -220,7 +220,7 @@ Lebanon,LBN,GDP per capita (current US$),NY.GDP.PCAP.CD,2020 [YR2020],5561.19166
 Lebanon,LBN,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2020 [YR2020],1507.5,2020
 Lebanon,LBN,GDP (current US$),NY.GDP.MKTP.CD,2020 [YR2020],31712128253.796097,2020
 Jordan,JOR,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2020 [YR2020],0.3332943506283782,2020
-Jordan,JOR,GDP per capita (current US$),NY.GDP.PCAP.CD,2020 [YR2020],4022.0401356134957,2020
+Jordan,JOR,GDP per capita (current US$),NY.GDP.PCAP.CD,2020 [YR2020],4022.040135613496,2020
 Jordan,JOR,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2020 [YR2020],0.71,2020
 Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2020 [YR2020],43700383098.59155,2020
 "Egypt, Arab Rep.",EGY,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2020 [YR2020],5.044932889775388,2020
@@ -243,7 +243,7 @@ Lebanon,LBN,GDP per capita (current US$),NY.GDP.PCAP.CD,2021 [YR2021],4045.37391
 Lebanon,LBN,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2021 [YR2021],1507.5,2021
 Lebanon,LBN,GDP (current US$),NY.GDP.MKTP.CD,2021 [YR2021],23131941556.784348,2021
 Jordan,JOR,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2021 [YR2021],1.346093772431178,2021
-Jordan,JOR,GDP per capita (current US$),NY.GDP.PCAP.CD,2021 [YR2021],4183.4999832686635,2021
+Jordan,JOR,GDP per capita (current US$),NY.GDP.PCAP.CD,2021 [YR2021],4183.499983268664,2021
 Jordan,JOR,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2021 [YR2021],0.71,2021
 Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2021 [YR2021],46296100140.84507,2021
 "Egypt, Arab Rep.",EGY,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2021 [YR2021],5.214049405130425,2021
@@ -272,8 +272,8 @@ Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2022 [YR2022],48764963380.28169,2022
 "Egypt, Arab Rep.",EGY,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2022 [YR2022],13.89566097751779,2022
 "Egypt, Arab Rep.",EGY,GDP per capita (current US$),NY.GDP.PCAP.CD,2022 [YR2022],4233.307837448563,2022
 "Egypt, Arab Rep.",EGY,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2022 [YR2022],19.16043974122044,2022
-"Egypt, Arab Rep.",EGY,GDP (current US$),NY.GDP.MKTP.CD,2022 [YR2022],476747720364.74164,2022
-Syrian Arab Republic,SYR,GDP per capita (current US$),NY.GDP.PCAP.CD,2022 [YR2022],1051.6714958746265,2022
+"Egypt, Arab Rep.",EGY,GDP (current US$),NY.GDP.MKTP.CD,2022 [YR2022],476747720364.7416,2022
+Syrian Arab Republic,SYR,GDP per capita (current US$),NY.GDP.PCAP.CD,2022 [YR2022],1051.6714958746263,2022
 Syrian Arab Republic,SYR,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2022 [YR2022],2505.74691085873,2022
 Syrian Arab Republic,SYR,GDP (current US$),NY.GDP.MKTP.CD,2022 [YR2022],23622827079.50465,2022
 Saudi Arabia,SAU,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2022 [YR2022],2.474073719253717,2022
@@ -301,7 +301,7 @@ Saudi Arabia,SAU,GDP per capita (current US$),NY.GDP.PCAP.CD,2023 [YR2023],36156
 Saudi Arabia,SAU,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2023 [YR2023],3.75,2023
 Saudi Arabia,SAU,GDP (current US$),NY.GDP.MKTP.CD,2023 [YR2023],1218584533333.3333,2023
 United Arab Emirates,ARE,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2023 [YR2023],1.626708372132483,2023
-United Arab Emirates,ARE,GDP per capita (current US$),NY.GDP.PCAP.CD,2023 [YR2023],49850.687217516395,2023
+United Arab Emirates,ARE,GDP per capita (current US$),NY.GDP.PCAP.CD,2023 [YR2023],49850.6872175164,2023
 United Arab Emirates,ARE,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2023 [YR2023],3.6725,2023
 United Arab Emirates,ARE,GDP (current US$),NY.GDP.MKTP.CD,2023 [YR2023],522622191967.3247,2023
 Lebanon,LBN,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2024 [YR2024],45.24304227167184,2024
@@ -313,12 +313,117 @@ Jordan,JOR,GDP (current US$),NY.GDP.MKTP.CD,2024 [YR2024],53352289577.46479,2024
 "Egypt, Arab Rep.",EGY,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2024 [YR2024],28.27058993220827,2024
 "Egypt, Arab Rep.",EGY,GDP per capita (current US$),NY.GDP.PCAP.CD,2024 [YR2024],3338.473713958945,2024
 "Egypt, Arab Rep.",EGY,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2024 [YR2024],45.29926,2024
-"Egypt, Arab Rep.",EGY,GDP (current US$),NY.GDP.MKTP.CD,2024 [YR2024],389059911003.56573,2024
+"Egypt, Arab Rep.",EGY,GDP (current US$),NY.GDP.MKTP.CD,2024 [YR2024],389059911003.5657,2024
 Saudi Arabia,SAU,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2024 [YR2024],1.687921123758089,2024
 Saudi Arabia,SAU,GDP per capita (current US$),NY.GDP.PCAP.CD,2024 [YR2024],35121.66286877422,2024
 Saudi Arabia,SAU,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2024 [YR2024],3.75,2024
 Saudi Arabia,SAU,GDP (current US$),NY.GDP.MKTP.CD,2024 [YR2024],1239804533333.3333,2024
 United Arab Emirates,ARE,"Inflation, consumer prices (annual %)",FP.CPI.TOTL.ZG,2024 [YR2024],1.66336510224894,2024
-United Arab Emirates,ARE,GDP per capita (current US$),NY.GDP.PCAP.CD,2024 [YR2024],50273.506046983675,2024
+United Arab Emirates,ARE,GDP per capita (current US$),NY.GDP.PCAP.CD,2024 [YR2024],50273.50604698368,2024
 United Arab Emirates,ARE,"Official exchange rate (LCU per US$, period average)",PA.NUS.FCRF,2024 [YR2024],3.6725,2024
 United Arab Emirates,ARE,GDP (current US$),NY.GDP.MKTP.CD,2024 [YR2024],552324846834.5814,2024
+United Arab Emirates,ARE,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2024 [YR2024],0.325377524202418,2024
+United Arab Emirates,ARE,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2023 [YR2023],0.359500450678101,2023
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2024 [YR2024],7.59757023635599,2024
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2023 [YR2023],4.93326942206534,2023
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2022 [YR2022],5.94293350334715,2022
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2021 [YR2021],7.4144321712116,2021
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2020 [YR2020],7.71274724506713,2020
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2019 [YR2019],8.40388463187991,2019
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2018 [YR2018],9.71698574857486,2018
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2017 [YR2017],9.96018840777921,2017
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2016 [YR2016],5.59207795083782,2016
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2015 [YR2015],5.56383108965179,2015
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2014 [YR2014],6.40402291079812,2014
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2013 [YR2013],6.18272925177381,2013
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2012 [YR2012],6.89188511375172,2012
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2011 [YR2011],6.06988425351907,2011
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2010 [YR2010],5.68677117520305,2010
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2009 [YR2009],3.7799170984456,2009
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2008 [YR2008],5.33969849246231,2008
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2007 [YR2007],5.86930961331901,2007
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2006 [YR2006],4.96108547838757,2006
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2005 [YR2005],5.59589671309192,2005
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2004 [YR2004],4.24041046775191,2004
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2003 [YR2003],3.68782754491018,2003
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2002 [YR2002],3.39780812879388,2002
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2001 [YR2001],3.01123334262615,2001
+"Egypt, Arab Rep.",EGY,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2000 [YR2000],2.85661217289033,2000
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2024 [YR2024],8.30541068744501,2024
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2023 [YR2023],8.5342141956866,2023
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2022 [YR2022],9.78565654560806,2022
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2021 [YR2021],10.9558097995849,2021
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2020 [YR2020],11.0277178090294,2020
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2019 [YR2019],10.255676824112,2019
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2018 [YR2018],10.3110054962553,2018
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2017 [YR2017],10.6516184361923,2017
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2016 [YR2016],10.9660770338384,2016
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2015 [YR2015],13.8603866066361,2015
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2014 [YR2014],17.2866368135782,2014
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2013 [YR2013],15.5069038404564,2013
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2012 [YR2012],12.1648907193624,2012
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2011 [YR2011],12.4777301545258,2011
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2010 [YR2010],13.3521924032083,2010
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2009 [YR2009],14.1218875653689,2009
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2008 [YR2008],15.4914351853975,2008
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2007 [YR2007],19.4406271031937,2007
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2006 [YR2006],18.5557449837945,2006
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2005 [YR2005],19.2300797705476,2005
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2004 [YR2004],20.0447416233052,2004
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2003 [YR2003],21.5889440701648,2003
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2002 [YR2002],22.2799575387991,2002
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2001 [YR2001],22.4083736569479,2001
+Jordan,JOR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2000 [YR2000],21.8080584126561,2000
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2023 [YR2023],33.349773045666,2023
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2022 [YR2022],30.6555163782975,2022
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2021 [YR2021],27.4664867984856,2021
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2020 [YR2020],20.7914353641318,2020
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2019 [YR2019],14.2830959782727,2019
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2018 [YR2018],12.7099619118303,2018
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2017 [YR2017],13.3172963119566,2017
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2016 [YR2016],14.870244060714,2016
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2015 [YR2015],14.9828084463078,2015
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2014 [YR2014],14.9511646268716,2014
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2013 [YR2013],16.1403001328547,2013
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2012 [YR2012],15.156125951893,2012
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2011 [YR2011],17.2252495411949,2011
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2010 [YR2010],17.9847875959222,2010
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2009 [YR2009],21.3509251479102,2009
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2008 [YR2008],24.659537374231,2008
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2007 [YR2007],23.2374330512925,2007
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2006 [YR2006],23.6221508847015,2006
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2005 [YR2005],22.9066080604881,2005
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2004 [YR2004],26.4247709642857,2004
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2003 [YR2003],23.6170833667187,2003
+Lebanon,LBN,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2002 [YR2002],13.2854000035069,2002
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2024 [YR2024],0.0273000004265027,2024
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2023 [YR2023],0.0256318852551406,2023
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2022 [YR2022],0.0231657002868662,2022
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2021 [YR2021],0.0300118046534322,2021
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2020 [YR2020],0.0393583696631861,2020
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2019 [YR2019],0.0375782473904536,2019
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2018 [YR2018],0.0377766708836924,2018
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2017 [YR2017],0.0392285559698217,2017
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2016 [YR2016],0.0460425534219694,2016
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2015 [YR2015],0.0426057491739427,2015
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2014 [YR2014],0.0347205659958046,2014
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2013 [YR2013],0.0349167043120865,2013
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2012 [YR2012],0.0327055489847342,2012
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2011 [YR2011],0.035808339973939,2011
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2010 [YR2010],0.044770287230573,2010
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2009 [YR2009],0.0499652915232391,2009
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2008 [YR2008],0.0415906113055459,2008
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2007 [YR2007],0.0296820194500949,2007
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2006 [YR2006],0.0280180319959532,2006
+Saudi Arabia,SAU,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2005 [YR2005],0.0285778415860194,2005
+Syrian Arab Republic,SYR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2010 [YR2010],2.64296593950914,2010
+Syrian Arab Republic,SYR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2009 [YR2009],2.49461597251721,2009
+Syrian Arab Republic,SYR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2008 [YR2008],2.5210550229731,2008
+Syrian Arab Republic,SYR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2007 [YR2007],2.54648302451392,2007
+Syrian Arab Republic,SYR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2006 [YR2006],2.35543071030883,2006
+Syrian Arab Republic,SYR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2005 [YR2005],2.85180007408204,2005
+Syrian Arab Republic,SYR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2004 [YR2004],3.40814639933506,2004
+Syrian Arab Republic,SYR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2003 [YR2003],4.07272359967714,2003
+Syrian Arab Republic,SYR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2002 [YR2002],0.65314076765904,2002
+Syrian Arab Republic,SYR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2001 [YR2001],0.840044434953306,2001
+Syrian Arab Republic,SYR,"Personal remittances, received (% of GDP)",BX.TRF.PWKR.DT.GD.ZS,2000 [YR2000],0.950517508398526,2000

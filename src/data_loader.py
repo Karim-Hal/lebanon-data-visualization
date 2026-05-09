@@ -21,6 +21,15 @@ def load_wfp_prices() -> pd.DataFrame:
 
 
 @st.cache_data
+def load_supermarket_compare() -> pd.DataFrame:
+    """Side-by-side basket comparison of 10 staples at two Lebanese
+    supermarkets (anonymised "A" vs "B" as published in the source).
+    Single-snapshot LBP prices.
+    """
+    return pd.read_csv(DATA / "supermarket_compare.csv")
+
+
+@st.cache_data
 def load_exchange_rate() -> pd.DataFrame:
     df = pd.read_csv(DATA / "wfp_exchange_rate.csv", parse_dates=["date"])
     df["year_month"] = df["date"].dt.to_period("M").astype(str)
@@ -107,4 +116,11 @@ def load_u5mort_mena() -> pd.DataFrame:
         "RATE_PER_1000_NL": "rate_low",
         "RATE_PER_1000_NU": "rate_high",
     })
+    return df
+
+
+@st.cache_data
+def load_unhcr_refugees() -> pd.DataFrame:
+    df = pd.read_csv(DATA / "unhcr_refugees_lebanon.csv", parse_dates=["as_of_date"])
+    df["registered_refugees"] = pd.to_numeric(df["registered_refugees"], errors="coerce").astype("Int64")
     return df
