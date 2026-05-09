@@ -45,7 +45,7 @@ GEOJSON_PATH = ASSETS / "geoBoundaries-LBN-ADM1_simplified.geojson"
 # -- Global Plotly style ------------------------------------------------------
 def _ecolor(key):
     """Map EVENTS color_key to the project PALETTE."""
-    return PALETTE[0] if key == "crisis_red" else PALETTE[1]
+    return PALETTE[10] if key == "crisis_red" else PALETTE[4]
 
 _BASE = dict(
     font=dict(family="DM Sans, sans-serif", color="#1F3864", size=12),
@@ -73,7 +73,7 @@ def load_all():
 
 CSS = (
     ":root{"
-    "--navy:#1F3864;--red:#ff595e;--blue:#1982c4;"
+    "--navy:#1F3864;--red:#d03109;--blue:#00a8e2;"
     "--bg:#F4F6F9;--white:#FFFFFF;--card-bg:#EBF3FB;"
     "--muted:#6B7280;--border:#D5DCE8;"
     "--shadow:0 2px 10px rgba(31,56,100,0.08);"
@@ -118,7 +118,7 @@ CSS = (
     "font-size:62px;font-weight:400;line-height:1.04;"
     "letter-spacing:-0.025em;margin-bottom:20px;"
     "}"
-    ".hero h1 span{color:#ff595e}"
+    ".hero h1 span{color:#e06600}"
     ".hero-sub{"
     "font-size:16px;color:rgba(255,255,255,0.65);"
     "max-width:620px;line-height:1.75;margin-bottom:52px;"
@@ -341,11 +341,11 @@ INTERACTIVE_JS = (
     "var traces=["
     '{x:lbp.map(function(p){return p.ym;}),y:lbp.map(function(p){return p.price;}),'
     'type:"scatter",mode:"lines",name:"LBP price",yaxis:"y",'
-    'line:{color:"#C00000",width:2.5},'
+    'line:{color:"#e06600",width:2.5},'
     'hovertemplate:"<b>%{x}</b><br>LBP: %{y:,.0f}<extra></extra>"},'
     '{x:usd.map(function(p){return p.ym;}),y:usd.map(function(p){return p.usdprice;}),'
     'type:"scatter",mode:"lines",name:"USD price",yaxis:"y2",'
-    'line:{color:"#2E74B5",width:2.5,dash:"dot"},'
+    'line:{color:"#00a8e2",width:2.5,dash:"dot"},'
     'hovertemplate:"<b>%{x}</b><br>USD: $%{y:.2f}<extra></extra>"}'
     "];"
     'var div=document.getElementById("plot-lbp_usd");'
@@ -455,7 +455,7 @@ INTERACTIVE_JS = (
     "});"
     "updateHealthExplorer();"
 
-    # ── Stacked bar governorate: commodity checkbox + year filter ─────────────
+    # ── Stacked bar governorate: commodity checkbox + year filter + dynamic sort ──
     'var gbEl=document.getElementById("gov-bar-comms");'
     "if(gbEl){"
     "var gbData=JSON.parse(gbEl.textContent);"
@@ -465,31 +465,47 @@ INTERACTIVE_JS = (
     'var gbDiv=document.getElementById("plot-stacked_bar_govs");'
     'var gbYear="2022";'
 
-    # Apply visibility from checkboxes
-    "function applyGovBarVis(){"
-    "if(!gbDiv)return;"
+    # Single function: sort govs by total of checked comms, update x/y/visible for all traces
+    "function applyGovBar(){"
+    "if(!gbDiv||!gbComms.length)return;"
+    "var yData=gbByYear[gbYear]||{};"
+    # Which commodities are currently checked?
     'var vis=gbComms.map(function(c){'
     'var cb=document.querySelector(".gov-bar-cb[value=\'"+c+"\']");'
     "return cb?cb.checked:true;"
     "});"
-    "Plotly.restyle(gbDiv,{visible:vis});"
-    "}"
-
-    # Apply y-values for the selected year
-    "function applyGovBarYear(){"
-    "if(!gbDiv||!gbComms.length)return;"
-    "var yData=gbByYear[gbYear]||{};"
-    "var ys=gbComms.map(function(c){"
+    # Sum LBP prices for checked comms per gov to determine sort order
+    "var totals={};"
+    "gbGovOrder.forEach(function(g){totals[g]=0;});"
+    "gbComms.forEach(function(c,i){"
+    "if(!vis[i])return;"
     "var cd=yData[c]||{};"
-    "return gbGovOrder.map(function(g){return cd[g]||0;});"
+    "gbGovOrder.forEach(function(g){totals[g]+=(cd[g]||0);});"
     "});"
-    "var idxs=gbComms.map(function(_,i){return i;});"
-    "Plotly.restyle(gbDiv,{y:ys},idxs);"
+    # Sort govs descending by total LBP price
+    "var sorted=gbGovOrder.slice().sort(function(a,b){return totals[b]-totals[a];});"
+    # Build updated trace data
+    "var currentTraces=gbDiv.data||[];"
+    "var newTraces=currentTraces.map(function(t,i){"
+    "var cd=yData[gbComms[i]]||{};"
+    "return Object.assign({},t,{"
+    "x:sorted,"
+    "y:sorted.map(function(g){return cd[g]||0;}),"
+    "visible:vis[i]"
+    "});"
+    "});"
+    "var layout=JSON.parse(JSON.stringify(gbDiv.layout||{}));"
+    # Remove categoryarray so Plotly derives order from trace x values
+    "if(layout.xaxis)delete layout.xaxis.categoryarray;"
+    "Plotly.react(gbDiv,newTraces,layout,{responsive:true,displaylogo:false,displayModeBar:true});"
     "}"
 
     # Wire checkboxes
     'document.querySelectorAll(".gov-bar-cb").forEach(function(cb){'
-    'cb.addEventListener("change",applyGovBarVis);'
+    'cb.addEventListener("change",function(){'
+    "cb.closest(\"label\").classList.toggle(\"checked\",cb.checked);"
+    "applyGovBar();"
+    "});"
     "});"
 
     # Wire year buttons
@@ -498,7 +514,7 @@ INTERACTIVE_JS = (
     'document.querySelectorAll(".gov-bar-yr-btn").forEach(function(b){b.classList.remove("active");});'
     'btn.classList.add("active");'
     'gbYear=btn.dataset.year;'
-    "applyGovBarYear();"
+    "applyGovBar();"
     "});"
     "});"
     "}"
@@ -592,21 +608,14 @@ def _fig_timeline():
 def _fig_gdp_rate(wdi):
     lbn_gdp = wdi[(wdi["Country Name"] == "Lebanon") & (wdi["Series Code"] == SERIES["gdp"])].copy()
     lbn_gdp["gdp_bn"] = lbn_gdp["Value"] / 1e9
-    lbn_fx  = wdi[(wdi["Country Name"] == "Lebanon") & (wdi["Series Code"] == SERIES["official_fx"])].copy()
 
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=lbn_gdp["Year"], y=lbn_gdp["gdp_bn"], name="GDP (USD bn)",
-        line=dict(color=PALETTE[0], width=2.5), mode="lines+markers",
-        marker=dict(size=5),
+        line=dict(color=PALETTE[2], width=2.5), mode="lines+markers",
+        marker=dict(size=5, color=PALETTE[2]),
         hovertemplate="<b>%{x}</b><br>GDP: $%{y:.1f}B<extra></extra>",
-    ), secondary_y=False)
-    fig.add_trace(go.Scatter(
-        x=lbn_fx["Year"], y=lbn_fx["Value"], name="Official LBP/USD",
-        line=dict(color=PALETTE[3], width=2.5, dash="dot"), mode="lines+markers",
-        marker=dict(size=5),
-        hovertemplate="<b>%{x}</b><br>Rate: %{y:,.0f} LBP/USD<extra></extra>",
-    ), secondary_y=True)
+    ))
 
     _stagger_y = [0.93, 0.72, 0.51]
     for (date_str, label, color_key, dash), y_pos in zip(EVENTS, _stagger_y):
@@ -622,14 +631,11 @@ def _fig_gdp_rate(wdi):
             xanchor="left", xshift=5,
         )
 
-    fig.update_yaxes(title_text="GDP (USD billions)", secondary_y=False,
-                     tickprefix="$", ticksuffix="B", gridcolor="#EEF1F5")
-    fig.update_yaxes(title_text="Official LBP per USD", secondary_y=True,
-                     tickformat=",", showgrid=False)
+    fig.update_yaxes(title_text="GDP (USD billions)", tickprefix="$", ticksuffix="B",
+                     gridcolor="#EEF1F5")
     fig.update_xaxes(title_text="Year", dtick=1, showgrid=False)
-    fig.update_layout(**_BASE, height=420, margin=dict(l=60, r=60, t=44, b=48),
-                      hovermode="x unified",
-                      legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+    fig.update_layout(**_BASE, height=420, margin=dict(l=60, r=24, t=44, b=48),
+                      hovermode="x unified", showlegend=False)
     return fig.to_json()
 
 
@@ -682,7 +688,7 @@ def _fig_fx_spread(wdi, exrate):
     fig.add_trace(go.Scatter(
         x=off["date"], y=off["Value"], name="Official rate (WDI)",
         mode="lines+markers",
-        line=dict(color=PALETTE[3], width=2, shape="hv"),
+        line=dict(color=PALETTE[2], width=2, shape="hv"),
         marker=dict(size=5),
         hovertemplate="<b>%{x|%Y}</b><br>Official: %{y:,.0f} LBP/USD<extra></extra>",
     ))
@@ -691,7 +697,7 @@ def _fig_fx_spread(wdi, exrate):
         mode="lines",
         line=dict(color=PALETTE[0], width=2.5),
         fill="tonexty",
-        fillcolor="rgba(255,89,94,0.10)",
+        fillcolor="rgba(224,102,0,0.10)",
         hovertemplate="<b>%{x|%b %Y}</b><br>Unofficial: %{y:,.0f} LBP/USD<extra></extra>",
     ))
 
@@ -700,9 +706,9 @@ def _fig_fx_spread(wdi, exrate):
         x=pd.Timestamp("2019-01-01"), y=1508,
         text="<b>Jan 2019</b><br>1,508 LBP/USD",
         showarrow=True, arrowhead=2, arrowwidth=1.5,
-        arrowcolor=PALETTE[3], ax=40, ay=-40,
-        font=dict(size=10, color=PALETTE[3], family="DM Sans, sans-serif"),
-        bgcolor="white", bordercolor=PALETTE[3], borderwidth=1, borderpad=5,
+        arrowcolor=PALETTE[2], ax=40, ay=-40,
+        font=dict(size=10, color=PALETTE[2], family="DM Sans, sans-serif"),
+        bgcolor="white", bordercolor=PALETTE[2], borderwidth=1, borderpad=5,
         xanchor="left",
     )
 
@@ -834,17 +840,20 @@ def _fig_inflation_heatmap(wdi):
     z_max = max(max(flat), 1.0)       if flat else POS_CAP
     zero_pos = (-z_min) / (z_max - z_min) if z_max > z_min else 0.5
 
-    # Diverging green→white→red, with white anchored at z=0.
+    # Diverging green→pale→warm-yellow→orange→red-orange, anchored at z=0.
+    # Colors derived from the project palette: greens from PALETTE[1]/#56b76a,
+    # oranges from PALETTE[4]/#f78b32 and PALETTE[0]/#e06600, red from PALETTE[10]/#d03109.
+    # Estimated warm yellow (#e8c235) bridges the palette tones between green and orange.
     eps = 1e-3
     colorscale = [
-        [0.00,                  "#1a9850"],   # deep green (deflation)
-        [max(0.0, zero_pos*0.5), "#91cf60"],  # green
-        [max(0.0, zero_pos - eps), "#d9ef8b"],  # light green just before zero
-        [zero_pos,              "#ffffbf"],   # neutral at zero
-        [min(1.0, zero_pos + (1-zero_pos)*0.20), "#fee08b"],
-        [min(1.0, zero_pos + (1-zero_pos)*0.45), "#fdae61"],
-        [min(1.0, zero_pos + (1-zero_pos)*0.70), "#f46d43"],
-        [1.00,                  "#a50026"],   # deep red (high inflation)
+        [0.00,                   "#056b38"],   # deep green (heavy deflation)
+        [max(0.0, zero_pos*0.5), "#56b76a"],   # PALETTE[1] green
+        [max(0.0, zero_pos - eps), "#b8dbbf"], # pale green just before zero
+        [zero_pos,               "#f8f8f8"],   # near-white at zero
+        [min(1.0, zero_pos + (1-zero_pos)*0.20), "#fce0b0"],  # pale warm
+        [min(1.0, zero_pos + (1-zero_pos)*0.45), "#f78b32"],  # PALETTE[4] orange
+        [min(1.0, zero_pos + (1-zero_pos)*0.70), "#e06600"],  # PALETTE[0] deep orange
+        [1.00,                   "#d03109"],   # PALETTE[10] red-orange (extreme)
     ]
 
     fig = go.Figure(go.Heatmap(
@@ -1219,13 +1228,8 @@ def _fig_price_discrepancy(basket, wdi):
 # and district-level treemap drawn from WFP market survey data.
 # ---------------------------------------------------------------------------
 
-# Distinct categorical palette for 24 commodities.
-import plotly.colors as _pc
-_COMM_PALETTE = (
-    _pc.qualitative.D3
-    + _pc.qualitative.G10
-    + _pc.qualitative.Pastel
-)
+# Distinct categorical palette for 24 commodities — cycle through project palette.
+_COMM_PALETTE = PALETTE * 3
 
 # Commodities present in ALL 8 governorates in 2022 (pre-validated).
 _GOVS_COMMON_COMMS = [
@@ -1365,9 +1369,9 @@ def _fig_food_price_choropleth(prices):
         featureidkey="properties.shapeName",
         color="avg_usd",
         color_continuous_scale=[
-            [0.0, "#EBF3FB"],
-            [0.4, PALETTE[3]],
-            [0.7, PALETTE[4]],
+            [0.0, "#e8f4fb"],
+            [0.4, PALETTE[2]],
+            [0.7, PALETTE[0]],
             [1.0, COLORS["deep_navy"]],
         ],
         map_style="carto-positron",
@@ -1762,8 +1766,12 @@ _DB_CODES = {
 
 _MENA_PEERS = ["Lebanon", "Saudi Arabia", "Jordan", "Syrian Arab Republic", "Egypt", "World"]
 _MENA_COLORS = {
-    "Lebanon": "#ff595e", "Saudi Arabia": "#1982c4", "Jordan": "#46dff7",
-    "Syrian Arab Republic": "#ffca3a", "Egypt": "#6a4c93", "World": "#af848c",
+    "Lebanon":              "#e06600",  # PALETTE[0] deep orange
+    "Saudi Arabia":         "#00a8e2",  # PALETTE[2] blue
+    "Jordan":               "#ca8572",  # PALETTE[5] mauve
+    "Syrian Arab Republic": "#aa5ba5",  # PALETTE[3] purple
+    "Egypt":                "#5e53c5",  # PALETTE[7] indigo
+    "World":                "#ac86ec",  # PALETTE[6] lavender
 }
 
 
@@ -1798,27 +1806,27 @@ def _fig_lag(basket, health):
                         subplot_titles=("Basket Price Index (2019=100)", "Stunting Prevalence (%)"))
     fig.add_trace(go.Scatter(
         x=basket_annual["year"], y=basket_annual["price_index"],
-        name="Price Index", line=dict(color="#ff595e", width=2.5),
-        fill="tozeroy", fillcolor="rgba(255,89,94,0.08)",
+        name="Price Index", line=dict(color=PALETTE[0], width=2.5),
+        fill="tozeroy", fillcolor="rgba(224,102,0,0.08)",
         hovertemplate="<b>%{x}</b><br>Price Index: %{y:.0f}<extra></extra>",
     ), row=1, col=1)
     fig.add_trace(go.Scatter(
         x=stunt["YEAR (DISPLAY)"], y=stunt["Numeric"],
-        name="Stunting %", line=dict(color="#6a4c93", width=2.5),
-        mode="lines+markers", marker=dict(size=6, color="#6a4c93"),
+        name="Stunting %", line=dict(color=PALETTE[7], width=2.5),
+        mode="lines+markers", marker=dict(size=6, color=PALETTE[7]),
         hovertemplate="<b>%{x}</b><br>Stunting: %{y:.1f}%<extra></extra>",
     ), row=2, col=1)
 
     for r in [1, 2]:
-        fig.add_vrect(x0=2020, x1=2022, fillcolor=PALETTE[1], opacity=0.08,
+        fig.add_vrect(x0=2020, x1=2022, fillcolor=PALETTE[4], opacity=0.08,
                       line_width=0, row=r, col=1)
         for yr in [2020, 2022]:
-            fig.add_vline(x=yr, line_dash="dash", line_color=PALETTE[1],
+            fig.add_vline(x=yr, line_dash="dash", line_color=PALETTE[4],
                           line_width=1, opacity=0.6, row=r, col=1)
 
     fig.add_annotation(x=2021, y=1, xref="x", yref="paper",
                        text="Crisis window<br>2020-2022", showarrow=False,
-                       font=dict(size=10, color=PALETTE[1], family="DM Sans, sans-serif"),
+                       font=dict(size=10, color=PALETTE[4], family="DM Sans, sans-serif"),
                        bgcolor="rgba(255,255,255,0.8)")
     fig.update_yaxes(title_text="Price Index", row=1, col=1, gridcolor="#EEF1F5")
     fig.update_yaxes(title_text="Stunting (%)", row=2, col=1, ticksuffix="%", gridcolor="#EEF1F5")
@@ -1837,10 +1845,10 @@ def _fig_small_multiples(health):
     h = h[h["YEAR (DISPLAY)"] >= 2000]
 
     MULTI_CODES = [
-        ("Stunting prevalence (%)",       "NUTSTUNTINGPREV",                "#ff595e"),
-        ("Anaemia in children (%)",       "NUTRITION_ANAEMIA_CHILDREN_PREV","#ffca3a"),
-        ("Infant mortality (per 1,000)",  "MDG_0000000001",                 "#1982c4"),
-        ("Under-5 mortality (per 1,000)", "MDG_0000000007",                 "#6a4c93"),
+        ("Stunting prevalence (%)",       "NUTSTUNTINGPREV",                PALETTE[0]),
+        ("Anaemia in children (%)",       "NUTRITION_ANAEMIA_CHILDREN_PREV", PALETTE[4]),
+        ("Infant mortality (per 1,000)",  "MDG_0000000001",                 PALETTE[2]),
+        ("Under-5 mortality (per 1,000)", "MDG_0000000007",                 PALETTE[7]),
     ]
 
     from plotly.subplots import make_subplots as _msp
@@ -1916,7 +1924,7 @@ def _fig_slope(health):
     fig = go.Figure()
     for r in rows:
         improved = r["v_post"] < r["v_pre"]
-        col = "#8ac926" if improved else "#ff595e"
+        col = PALETTE[1] if improved else PALETTE[10]
         fig.add_trace(go.Scatter(
             x=[r["y_pre"], r["y_post"]],
             y=[r["v_pre"], r["v_post"]],
@@ -1983,7 +1991,7 @@ def _fig_dumbbell(health):
     names = [r["indicator"] for r in rows]
     fig = go.Figure()
     for r in rows:
-        lc = "#8ac926" if r["improved"] else "#ff595e"
+        lc = PALETTE[1] if r["improved"] else PALETTE[10]
         fig.add_shape(type="line", x0=0, x1=r["pct"],
                       y0=r["indicator"], y1=r["indicator"],
                       line=dict(color=lc, width=3))
@@ -1999,7 +2007,7 @@ def _fig_dumbbell(health):
     if imp:
         fig.add_trace(go.Scatter(
             x=[r["pct"] for r in imp], y=[r["indicator"] for r in imp],
-            mode="markers", marker=dict(color="#8ac926", size=13, line=dict(color="white", width=2)),
+            mode="markers", marker=dict(color=PALETTE[1], size=13, line=dict(color="white", width=2)),
             name="Improved",
             customdata=[[r["yr_latest"], r["val_latest"], r["pct"]] for r in imp],
             hovertemplate="<b>%{y}</b><br>%{customdata[0]}: %{customdata[1]:.1f}<br>Change: %{customdata[2]:+.1f}%<extra></extra>",
@@ -2007,13 +2015,13 @@ def _fig_dumbbell(health):
     if wors:
         fig.add_trace(go.Scatter(
             x=[r["pct"] for r in wors], y=[r["indicator"] for r in wors],
-            mode="markers", marker=dict(color="#ff595e", size=13, line=dict(color="white", width=2)),
+            mode="markers", marker=dict(color=PALETTE[10], size=13, line=dict(color="white", width=2)),
             name="Worsened",
             customdata=[[r["yr_latest"], r["val_latest"], r["pct"]] for r in wors],
             hovertemplate="<b>%{y}</b><br>%{customdata[0]}: %{customdata[1]:.1f}<br>Change: %{customdata[2]:+.1f}%<extra></extra>",
         ))
     for r in rows:
-        lc = "#8ac926" if r["improved"] else "#ff595e"
+        lc = PALETTE[1] if r["improved"] else PALETTE[10]
         fig.add_annotation(
             x=r["pct"], y=r["indicator"],
             text="{:+.0f}%".format(r["pct"]),
@@ -2063,10 +2071,10 @@ def _fig_mena(u5mort):
         (2020, "Port explosion",  0.58, "left"),
         (2021, "Subsidy removal", 0.97, "left"),
     ]:
-        fig.add_vline(x=yr, line_dash="dash", line_color=PALETTE[1], line_width=1.5)
+        fig.add_vline(x=yr, line_dash="dash", line_color=PALETTE[4], line_width=1.5)
         fig.add_annotation(x=yr, y=y_paper, xref="x", yref="paper",
                            text=lbl, showarrow=False,
-                           font=dict(size=10, color=PALETTE[1], family="DM Sans, sans-serif"),
+                           font=dict(size=10, color=PALETTE[4], family="DM Sans, sans-serif"),
                            xanchor=anchor, yanchor="top",
                            bgcolor="rgba(255,255,255,0.75)")
     fig.update_layout(
@@ -2084,13 +2092,13 @@ def _fig_mena(u5mort):
 # =============================================================================
 
 _ALL_HEALTH_INDICATORS = [
-    ("Stunting (%)",           "NUTSTUNTINGPREV",                    "#ff595e"),
-    ("Anaemia – Children","NUTRITION_ANAEMIA_CHILDREN_PREV",    "#ffca3a"),
-    ("Infant Mortality",       "MDG_0000000001",                     "#1982c4"),
-    ("Under-5 Mortality",      "MDG_0000000007",                     "#6a4c93"),
-    ("Wasting (%)",            "NUTRITION_WH_2",                     "#8ac926"),
-    ("Underweight (%)",        "NUTRITION_WA_2",                     "#46dff7"),
-    ("Neonatal Mortality",     "WHOSIS_000003",                      "#ff89a6"),
+    ("Stunting (%)",       "NUTSTUNTINGPREV",                 "#e06600"),  # PALETTE[0]
+    ("Anaemia - Children", "NUTRITION_ANAEMIA_CHILDREN_PREV", "#f78b32"),  # PALETTE[4]
+    ("Infant Mortality",   "MDG_0000000001",                  "#00a8e2"),  # PALETTE[2]
+    ("Under-5 Mortality",  "MDG_0000000007",                  "#5e53c5"),  # PALETTE[7]
+    ("Wasting (%)",        "NUTRITION_WH_2",                  "#56b76a"),  # PALETTE[1]
+    ("Underweight (%)",    "NUTRITION_WA_2",                  "#aa5ba5"),  # PALETTE[3]
+    ("Neonatal Mortality", "WHOSIS_000003",                   "#00906e"),  # PALETTE[8]
 ]
 _INITIAL_ACTIVE = {"NUTSTUNTINGPREV", "NUTRITION_ANAEMIA_CHILDREN_PREV",
                    "MDG_0000000001", "MDG_0000000007"}
@@ -2318,36 +2326,37 @@ def _section_macro(d):
         "Lebanon's trajectory compared against five regional peers.</p>"
         '<div class="g2">'
         '<div class="chart-card" style="margin-bottom:0">'
-        '<div class="chart-title">GDP &amp; Official Exchange Rate &mdash; Lebanon</div>'
-        '<div class="chart-caption">Left axis: GDP in USD billions &middot; '
-        'Right axis: Official LBP per USD (World Bank)</div>'
+        '<div class="chart-title">GDP: Lebanon</div>'
+        '<div class="chart-caption">Lebanon GDP in USD billions by year. '
+        'Event markers show the 2019 banking crisis, 2020 Beirut port explosion, '
+        'and 2021 subsidy removal. Source: World Bank WDI.</div>'
         + _plot_tag("gdp_rate", gdp_json) +
         '</div>'
         '<div class="chart-card" style="margin-bottom:0">'
-        '<div class="chart-title">Official vs Unofficial Exchange Rate &mdash; The "Two Lebanons"</div>'
+        '<div class="chart-title">Official vs Unofficial Exchange Rate: The "Two Lebanons"</div>'
         '<div class="chart-caption">Y axis is logarithmic so the gap is readable across the full range. '
-        'The shaded gap between the two lines <strong>is</strong> the crisis &mdash; '
-        'at its peak, market traders charged ~50x the official rate.</div>'
+        'The shaded gap between the two lines <strong>is</strong> the crisis. '
+        'At its peak, market traders charged ~50x the official rate.</div>'
         + _plot_tag("fx_spread", spread_json) +
         '</div>'
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Personal Remittances &mdash; % of GDP</div>'
+        '<div class="chart-title">Personal Remittances: % of GDP</div>'
         '<div class="chart-caption">In ' + str(rem_latest_year) + ', remittances equalled '
         '<strong>' + "{:.1f}%".format(rem_latest_pct) + '</strong> of Lebanon\'s GDP &mdash; '
         'among the highest in the world. The diaspora is what kept Lebanon from total collapse.</div>'
         + _plot_tag("remittances", remittances_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Inflation Heatmap &mdash; Country &times; Year</div>'
+        '<div class="chart-title">Inflation Heatmap: Country &times; Year</div>'
         '<div class="chart-caption">Each cell shows the annual inflation rate from 2015 onwards. '
-        'A diverging green&ndash;to&ndash;red scale anchors at 0%: green = deflation, '
-        'near&ndash;white = stable, red = high inflation (capped at 300% so Lebanon&rsquo;s 221% '
+        'A diverging scale anchors at 0%: green = deflation, '
+        'near-white = stable, orange-to-red = high inflation (capped at 300% so Lebanon&rsquo;s 221% '
         'peak reads clearly). Hover for exact values.</div>'
         + _plot_tag("inflation_heatmap", heat_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">GDP per Capita &mdash; Country Comparison</div>'
+        '<div class="chart-title">GDP per Capita: Country Comparison</div>'
         '<div class="chart-caption">Annual GDP per capita in USD, 2015 onwards. '
         "Lebanon's collapse from ~$8k to under $4k stands out against peer trajectories. "
         'Country colours follow the project palette and stay consistent across all charts. '
@@ -2363,15 +2372,12 @@ def _section_macro(d):
 def _section_food(d):
     prices = d["prices"]
     basket = d["basket"]
-    exrate = d["exrate"]
     wdi    = d["wdi"]
 
-    idx_json             = _fig_price_index(prices)
-    discrepancy_json     = _fig_price_discrepancy(basket, wdi)
-    scat_json, r, r2, n  = _fig_scatter(basket, exrate)
-    food_choro_json      = _fig_food_price_choropleth(prices)
-    dist_treemap_json    = _fig_price_treemap_districts(prices)
-    food_json            = _build_food_data(prices, basket)
+    idx_json          = _fig_price_index(prices)
+    food_choro_json   = _fig_food_price_choropleth(prices)
+    dist_treemap_json = _fig_price_treemap_districts(prices)
+    food_json         = _build_food_data(prices, basket)
 
     # --- Stacked bar: governorate order + multi-year data -------------------
     _df22_bar = prices[
@@ -2448,21 +2454,6 @@ def _section_food(d):
         '</div>'
     )
 
-    callout = (
-        '<div class="callout">'
-        '<div class="callout-stat">{:.2f}</div>'.format(r2) +
-        '<div class="callout-stat-label">R² &mdash; Correlation strength</div>'
-        '<p class="callout-body">'
-        'Each dot represents one month of market data. '
-        'An R² of <strong>{:.2f}</strong> means the unofficial LBP/USD exchange rate '.format(r2) +
-        'explains <strong>{:.0f}%</strong> of the variance in USD basket prices &mdash; '.format(r2 * 100) +
-        'confirming that the currency collapse, not just LBP inflation, '
-        'drove real purchasing-power loss for Lebanese households.'
-        '<br><br>Computed from <strong>{} monthly observations</strong>'.format(n) +
-        ' (Pearson r = {:.3f}) over the overlapping date range.'.format(r) +
-        '</p></div>'
-    )
-
     return (
         '<section id="s-food">'
         '<script type="application/json" id="food-data">' + food_json + '</script>'
@@ -2474,31 +2465,13 @@ def _section_food(d):
         '<p class="section-sub">How Lebanon\'s currency collapse drove staple food prices '
         'beyond reach &mdash; tracked through WFP market data across six basket commodities.</p>'
         '<div class="chart-card">'
-        '<div class="chart-title">Food Prices Relative to 2019 &mdash; How Far They&rsquo;ve Climbed</div>'
+        '<div class="chart-title">Food Prices Relative to 2019: How Far They&rsquo;ve Climbed</div>'
         '<div class="chart-caption">Each line shows the monthly price of a basket commodity '
         'normalized so its 2019 average equals 100. A reading of <strong>500</strong> means the '
         'commodity costs 5&times; its 2019 level; <strong>200</strong> means it has doubled. '
-        'Default view covers 2018&ndash;2023 &mdash; widen the range below to explore the full WFP series.</div>'
+        'Default view covers 2018&ndash;2023. Widen the range below to explore the full WFP series.</div>'
         + filter_bar +
         _plot_tag("price_index", idx_json) +
-        '</div>'
-        '<div class="chart-card">'
-        '<div class="chart-title">The Hidden Food Price Gap &mdash; Official Rate vs Market Reality</div>'
-        '<div class="chart-caption">The same LBP basket price divided by two different exchange rates tells '
-        'opposite stories. At the official peg (dotted), the basket appeared enormously expensive in USD '
-        'because LBP market prices surged while the denominator barely moved. At the market rate (solid), '
-        'the USD cost also rose &mdash; confirming real purchasing-power loss beyond just currency devaluation. '
-        'WFP&rsquo;s reported USD prices use the parallel market rate.</div>'
-        + _plot_tag("discrepancy", discrepancy_json) +
-        '</div>'
-        '<div class="g55">'
-        '<div class="chart-card" style="margin-bottom:0">'
-        '<div class="chart-title">Exchange Rate vs Basket USD Price</div>'
-        '<div class="chart-caption">Each dot is one month. '
-        'X = unofficial LBP/USD &middot; Y = average basket price in USD.</div>'
-        + _plot_tag("scatter", scat_json) +
-        '</div>'
-        + callout +
         '</div>'
         '<div class="chart-card">'
         '<script type="application/json" id="gov-bar-comms">'
@@ -2535,16 +2508,16 @@ def _section_food(d):
         + _plot_tag("stacked_bar_govs", stacked_bar_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Average Commodity Price by Governorate &mdash; 2022</div>'
+        '<div class="chart-title">Average Commodity Price by Governorate (2022)</div>'
         '<div class="chart-caption">Average USD price across all commodities surveyed by WFP in 2022. '
         'Darker = pricier governorate.</div>'
         + _plot_tag("food_choro", food_choro_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Average Commodity Price by District &mdash; 2022</div>'
+        '<div class="chart-title">Average Commodity Price by District (2022)</div>'
         '<div class="chart-caption">26 districts nested inside 8 governorates. '
-        'Tile area encodes average USD price across all commodities in 2022 &mdash; '
-        'larger tile = pricier district. Each governorate has its own distinct colour; '
+        'Tile area encodes average USD price across all commodities in 2022. '
+        'Larger tile = pricier district. Each governorate has its own distinct colour; '
         'districts within it share that colour.</div>'
         + _plot_tag("dist_treemap", dist_treemap_json) +
         '</div>'
@@ -2570,9 +2543,6 @@ def _section_insecurity(d):
     choro_json    = _fig_choropleth(geo_snap)
     donut_json    = _fig_donut(ipc_pop)
     ipc_bar_json  = _fig_ipc_bar(geo_snap)
-    gov_bar_json  = _fig_gov_bar(prices, selected_year)
-    treemap_a_json = _fig_treemap_insecurity(geo_snap, ipc_pop)
-    unhcr_json    = _fig_unhcr_choropleth(unhcr)
     ipc_data_json = _build_ipc_data(d["ipc_geo"], prices)
 
     unique_dates = sorted(d["ipc_geo"]["analysis_date"].unique())
@@ -2611,54 +2581,27 @@ def _section_insecurity(d):
         'population group, and over time. Select a snapshot date to update charts that '
         'support filtering.</p>'
         + ipc_filter +
-        # Row 1: IPC choropleth | UNHCR refugees choropleth
-        '<div class="g2">'
-        '<div class="chart-card" style="margin-bottom:0">'
+        # IPC choropleth (full width)
+        '<div class="chart-card">'
         '<div class="chart-title">IPC Phase 3+ by Governorate</div>'
         '<div class="chart-caption">Share of population in acute food insecurity. '
         'Darker = more severe.</div>'
         + _plot_tag("choropleth", choro_json) +
         '</div>'
-        '<div class="chart-card" style="margin-bottom:0">'
-        '<div class="chart-title">Registered Syrian Refugees by Governorate</div>'
-        '<div class="chart-caption">Lebanon hosts the world\'s highest per-capita refugee '
-        'population. Source: UNHCR Lebanon Operational Data (demo estimates).</div>'
-        + _plot_tag("unhcr_choropleth", unhcr_json) +
-        '</div>'
-        '</div>'
-        '<div style="margin-bottom:22px"></div>'
-        # Row 2: Treemap A | Donut (standalone, full-height)
-        '<div class="g2">'
-        '<div class="chart-card" style="margin-bottom:0">'
-        '<div class="chart-title">Phase 3+ Headcount &mdash; Governorate &times; Group</div>'
-        '<div class="chart-caption">Treemap of estimated Phase 3+ population. '
-        'Tile area is proportional to absolute number of people. '
-        '<em>Note:</em> assumes latest national group composition applies uniformly '
-        'across governorates (the IPC surveys are independent).</div>'
-        + _plot_tag("treemap_a", treemap_a_json) +
-        '</div>'
-        '<div class="chart-card" style="margin-bottom:0">'
+        # Donut (full width)
+        '<div class="chart-card">'
         '<div class="chart-title">Phase 3+ by Population Group</div>'
         '<div class="chart-caption">Share of people in acute food insecurity (IPC Phase 3+) '
         'by population group, at the most recent available survey per group. '
         'Hover for headcounts and exact survey date.</div>'
         + _plot_tag("donut", donut_json) +
         '</div>'
-        '</div>'
-        '<div style="margin-bottom:22px"></div>'
-        # Row 3: IPC stacked bar
+        # IPC stacked bar (full width)
         '<div class="chart-card">'
         '<div class="chart-title">IPC Phase Distribution by Governorate</div>'
-        '<div class="chart-caption">Stacked bars &mdash; % of analysed population '
+        '<div class="chart-caption">Stacked bars showing % of analysed population '
         'in each IPC phase. Sorted by Phase 3+ share.</div>'
         + _plot_tag("ipc_bar", ipc_bar_json) +
-        '</div>'
-        # Row 4: Gov basket bar
-        '<div class="chart-card">'
-        '<div class="chart-title">Avg Basket Price by Governorate &mdash; '
-        '<span id="gov-bar-year">' + str(selected_year) + '</span></div>'
-        '<div class="chart-caption">Average USD price of basket commodities per governorate.</div>'
-        + _plot_tag("gov_bar", gov_bar_json) +
         '</div>'
         '<p class="source-line">Sources: IPC Global Platform '
         '&middot; WFP VAM Food Price Monitoring</p>'
@@ -2707,7 +2650,7 @@ def _section_health(d):
         '<span class="section-eyebrow">2000 &ndash; 2024</span>'
         '</div>'
         '<h2 class="section-title">The Health Toll</h2>'
-        '<p class="section-sub">Stunting, wasting, anaemia, and mortality in Lebanon &mdash; '
+        '<p class="section-sub">Stunting, wasting, anaemia, and mortality in Lebanon, '
         'with a lagged view against food price shocks. The crisis is still unfolding: '
         'nutrition indicators worsen years after the price shock.</p>'
         '<div class="chart-card">'
@@ -2724,7 +2667,7 @@ def _section_health(d):
         + _plot_tag("small_multiples", small_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Food Prices vs Stunting Prevalence &mdash; Lag View</div>'
+        '<div class="chart-title">Food Prices vs Stunting Prevalence: Lag View</div>'
         '<div class="chart-caption">Top: Monthly basket price index (2019=100) &middot; '
         'Bottom: Annual stunting prevalence %. '
         'Shaded band highlights the 2020&ndash;2022 crisis window.</div>'
@@ -2738,7 +2681,7 @@ def _section_health(d):
         + _plot_tag("dumbbell", db_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Regional Under-5 Mortality &mdash; MENA Comparison</div>'
+        '<div class="chart-title">Regional Under-5 Mortality: MENA Comparison</div>'
         '<div class="chart-caption">Under-5 mortality rate (per 1,000 live births). '
         'Lebanon highlighted in red &middot; World average dashed &middot; '
         'Source: WHO &middot; 2000&ndash;2023.</div>'

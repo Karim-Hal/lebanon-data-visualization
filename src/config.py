@@ -4,44 +4,45 @@ import plotly.io as pio
 # Color palette
 # ---------------------------------------------------------------------------
 COLORS = {
-    "crisis_red":  "#C00000",
+    "crisis_red":  "#d03109",        # PALETTE[10] red-orange — highest severity
     "deep_navy":   "#1F3864",
-    "steel_blue":  "#2E74B5",
-    "teal":        "#1F7A8C",
-    "warning":     "#E36C09",
-    "ipc_phase_1": "#8ac926",   # PALETTE green  — minimal
-    "ipc_phase_2": "#ffca3a",   # PALETTE amber  — stressed
-    "ipc_phase_3": "#E36C09",   # PALETTE/COLORS orange — crisis
-    "ipc_phase_4": "#ff595e",   # PALETTE coral red — emergency
-    "ipc_phase_5": "#C00000",   # COLORS crisis_red — famine
+    "steel_blue":  "#00a8e2",        # PALETTE[2] blue
+    "teal":        "#00906e",        # PALETTE[8] teal
+    "warning":     "#f78b32",        # PALETTE[4] orange — warning level
+    "ipc_phase_1": "#56b76a",        # PALETTE[1] green — minimal
+    "ipc_phase_2": "#e8c235",        # warm yellow — stressed (estimated from palette tone)
+    "ipc_phase_3": "#f78b32",        # PALETTE[4] orange — crisis
+    "ipc_phase_4": "#e06600",        # PALETTE[0] deep orange — emergency
+    "ipc_phase_5": "#d03109",        # PALETTE[10] red-orange — famine
     "bg":          "#F8F9FA",
     "card_bg":     "#EBF3FB",
 }
 
 # ---------------------------------------------------------------------------
-# Project accent palette (10 colors) — use for chart series, indicators, peers
+# Project accent palette (11 colors) — use for chart series, indicators, peers
 # ---------------------------------------------------------------------------
 PALETTE = [
-    "#ff595e",  # coral red   — crisis / Lebanon / worsened
-    "#ffca3a",  # amber       — warning / Syria / anaemia
-    "#8ac926",  # green       — improvement / positive trend
-    "#1982c4",  # blue        — Saudi Arabia / infant mortality / neutral
-    "#6a4c93",  # dark purple — Egypt / under-5 mortality / deep analytical
-    "#46dff7",  # cyan        — Jordan / secondary series
-    "#a99df2",  # lavender    — tertiary series
-    "#ff89a6",  # pink        — quaternary series
-    "#af848c",  # muted rose  — World reference / background series
-    "#7f6aa3",  # medium purple — additional series
+    "#e06600",  # 0  deep orange  — primary / heat / Lebanon
+    "#56b76a",  # 1  green        — positive / improvement
+    "#00a8e2",  # 2  blue         — neutral / official / Saudi Arabia
+    "#aa5ba5",  # 3  purple       — Syria / analytical
+    "#f78b32",  # 4  light orange — warning / secondary heat
+    "#ca8572",  # 5  mauve        — Jordan / tertiary
+    "#ac86ec",  # 6  lavender     — UAE / quaternary
+    "#5e53c5",  # 7  indigo       — Egypt / deep analytical
+    "#00906e",  # 8  teal         — additional series
+    "#69b476",  # 9  light green  — additional series
+    "#d03109",  # 10 red-orange   — crisis / worsened / famine
 ]
 
-# Per-country color assignments — mapped to PALETTE (see CLAUDE.md §7)
+# Per-country color assignments — mapped to new PALETTE
 COUNTRY_COLORS = {
-    "Lebanon":                "#ff595e",  # PALETTE coral red
-    "Jordan":                 "#46dff7",  # PALETTE cyan
-    "Egypt, Arab Rep.":       "#6a4c93",  # PALETTE dark purple
-    "Syrian Arab Republic":   "#ffca3a",  # PALETTE amber
-    "Saudi Arabia":           "#1982c4",  # PALETTE blue
-    "United Arab Emirates":   "#7f6aa3",  # PALETTE medium purple
+    "Lebanon":                "#e06600",  # PALETTE[0] deep orange
+    "Jordan":                 "#ca8572",  # PALETTE[5] mauve
+    "Egypt, Arab Rep.":       "#5e53c5",  # PALETTE[7] indigo
+    "Syrian Arab Republic":   "#aa5ba5",  # PALETTE[3] purple
+    "Saudi Arabia":           "#00a8e2",  # PALETTE[2] blue
+    "United Arab Emirates":   "#ac86ec",  # PALETTE[6] lavender
 }
 
 # ---------------------------------------------------------------------------
