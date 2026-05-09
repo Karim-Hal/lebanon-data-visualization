@@ -27,7 +27,7 @@ from src.config import (
 )
 from src.data_loader import (
     load_basket_prices, load_exchange_rate, load_health,
-    load_ipc_geo, load_ipc_population_groups,
+    load_ipc_geo, load_ipc_population_groups, load_supermarket_compare,
     load_u5mort_mena, load_unhcr_refugees, load_wdi, load_wfp_prices,
 )
 from src.metrics import (
@@ -56,15 +56,16 @@ _BASE = dict(
 # -- Data loading -------------------------------------------------------------
 def load_all():
     return dict(
-        wdi    = load_wdi(),
-        prices = load_wfp_prices(),
-        exrate = load_exchange_rate(),
-        basket = load_basket_prices(),
-        ipc_geo= load_ipc_geo(),
-        ipc_pop= load_ipc_population_groups(),
-        health = load_health(),
-        u5mort = load_u5mort_mena(),
-        unhcr  = load_unhcr_refugees(),
+        wdi      = load_wdi(),
+        prices   = load_wfp_prices(),
+        exrate   = load_exchange_rate(),
+        basket   = load_basket_prices(),
+        ipc_geo  = load_ipc_geo(),
+        ipc_pop  = load_ipc_population_groups(),
+        health   = load_health(),
+        u5mort   = load_u5mort_mena(),
+        unhcr    = load_unhcr_refugees(),
+        smkt_cmp = load_supermarket_compare(),
     )
 
 # =============================================================================
@@ -383,7 +384,7 @@ INTERACTIVE_JS = (
     # Choropleth: restyle z and locations only (keeps geojson intact)
     'var cd=document.getElementById("plot-choropleth");'
     "if(cd)Plotly.restyle(cd,{z:[data.choro.z],locations:[data.choro.locations]},[0]);"
-    # IPC stacked bar
+    # IPC stacked bar — re-pin x-axis category order to the freshly sorted gov list
     'var bd=document.getElementById("plot-ipc_bar");'
     "if(bd){"
     "var ipcTraces=data.ipcBar.phases.map(function(ph){"
@@ -391,7 +392,11 @@ INTERACTIVE_JS = (
     'marker:{color:ph.color,line:{width:0}},'
     'hovertemplate:"<b>%{x}</b><br>"+ph.name+": %{y:.1f}%<extra></extra>"};'
     "});"
-    "Plotly.react(bd,ipcTraces,LAYS.ipc_bar||bd.layout);"
+    "var ipcLayout=JSON.parse(JSON.stringify(LAYS.ipc_bar||bd.layout));"
+    "if(!ipcLayout.xaxis)ipcLayout.xaxis={};"
+    'ipcLayout.xaxis.categoryorder="array";'
+    "ipcLayout.xaxis.categoryarray=data.ipcBar.govs;"
+    "Plotly.react(bd,ipcTraces,ipcLayout);"
     "}"
     # Gov basket price bar
     'var gd=document.getElementById("plot-gov_bar");'
@@ -465,7 +470,8 @@ INTERACTIVE_JS = (
     'var gbDiv=document.getElementById("plot-stacked_bar_govs");'
     'var gbYear="2022";'
 
-    # Single function: sort govs by total of checked comms, update x/y/visible for all traces
+    # Single function: sort govs by total of checked comms, update x/y/visible
+    # for all traces, refresh top-of-bar total annotations.
     "function applyGovBar(){"
     "if(!gbDiv||!gbComms.length)return;"
     "var yData=gbByYear[gbYear]||{};"
@@ -474,7 +480,7 @@ INTERACTIVE_JS = (
     'var cb=document.querySelector(".gov-bar-cb[value=\'"+c+"\']");'
     "return cb?cb.checked:true;"
     "});"
-    # Sum LBP prices for checked comms per gov to determine sort order
+    # Sum LBP prices for checked comms per gov (used for both sort and totals)
     "var totals={};"
     "gbGovOrder.forEach(function(g){totals[g]=0;});"
     "gbComms.forEach(function(c,i){"
@@ -497,6 +503,20 @@ INTERACTIVE_JS = (
     "var layout=JSON.parse(JSON.stringify(gbDiv.layout||{}));"
     # Remove categoryarray so Plotly derives order from trace x values
     "if(layout.xaxis)delete layout.xaxis.categoryarray;"
+    # Rebuild total annotations and headroom for the new sort + visibility
+    "var annotations=sorted.map(function(g){"
+    "return {"
+    "x:g,y:totals[g],"
+    'text:"<b>"+Math.round(totals[g]).toLocaleString()+"</b>",'
+    "showarrow:false,yshift:12,"
+    'font:{size:11,color:"#1F3864",family:"DM Sans, sans-serif"}'
+    "};"
+    "});"
+    "layout.annotations=annotations;"
+    "var maxTotal=0;"
+    "sorted.forEach(function(g){if(totals[g]>maxTotal)maxTotal=totals[g];});"
+    "if(!layout.yaxis)layout.yaxis={};"
+    "layout.yaxis.range=maxTotal>0?[0,maxTotal*1.10]:undefined;"
     "Plotly.react(gbDiv,newTraces,layout,{responsive:true,displaylogo:false,displayModeBar:true});"
     "}"
 
@@ -1228,26 +1248,51 @@ def _fig_price_discrepancy(basket, wdi):
 # and district-level treemap drawn from WFP market survey data.
 # ---------------------------------------------------------------------------
 
-# Distinct categorical palette for 24 commodities — cycle through project palette.
-_COMM_PALETTE = PALETTE * 3
-
-# Commodities present in ALL 8 governorates in 2022 (pre-validated).
+# Commodities present in (most) governorates — Fish/Lentils dedup'd to one each.
 _GOVS_COMMON_COMMS = [
     "Beans (white)", "Bread (pita)", "Bulgur (brown)", "Cabbage",
     "Cheese (picon)", "Chickpeas", "Cucumbers (greenhouse)", "Eggs",
-    "Fish (sardine, canned)", "Fish (tuna, canned)", "Lentils",
-    "Lentils (green)", "Lentils (red)", "Lettuce", "Meat (beef, canned)",
+    "Fish (tuna, canned)", "Lentils", "Lettuce", "Meat (beef, canned)",
     "Milk (powder)", "Oil (sunflower)", "Pasta (spaghetti)",
     "Rice (imported, Egyptian)", "Salt", "Sugar (white)", "Tea",
     "Tomatoes (paste)", "Wheat flour",
 ]
 
-# The 15 commodities shown in the reference image — default selection.
+# Default selection: 6 staples shown in the canonical 2022 reference view.
 _GOVS_DEFAULT_COMMS = {
-    "Beans (white)", "Bread (pita)", "Bulgur (brown)", "Cabbage",
-    "Cheese (picon)", "Chickpeas", "Lentils", "Milk (powder)",
-    "Oil (sunflower)", "Pasta (spaghetti)", "Rice (imported, Egyptian)",
-    "Salt", "Sugar (white)", "Tomatoes (paste)", "Wheat flour",
+    "Beans (white)", "Bulgur (brown)", "Oil (sunflower)",
+    "Rice (imported, Egyptian)", "Sugar (white)", "Wheat flour",
+}
+
+# Per-commodity colour map — the 6 defaults take the same six categorical
+# colours used in the district treemap (bright orange, lavender, mauve/light
+# brown, magenta-purple, teal-green, indigo). The 15 non-defaults cycle through
+# the remaining palette slots [1, 2, 4, 9, 10]; collisions among non-defaults
+# only matter if a user opts several in at once (they start hidden).
+_COMM_COLORS = {
+    # Defaults — colours pulled from the treemap palette
+    "Beans (white)":              PALETTE[0],   # bright orange
+    "Bulgur (brown)":             PALETTE[5],   # light brown / mauve
+    "Oil (sunflower)":            PALETTE[6],   # bright purple / lavender
+    "Rice (imported, Egyptian)":  PALETTE[3],   # dark magenta-purple
+    "Sugar (white)":              PALETTE[8],   # green
+    "Wheat flour":                PALETTE[7],   # dark indigo
+    # Non-defaults — cycle through unused palette slots
+    "Bread (pita)":               PALETTE[4],   # light orange
+    "Cabbage":                    PALETTE[9],   # light green
+    "Cheese (picon)":             PALETTE[1],   # green
+    "Chickpeas":                  PALETTE[2],   # blue
+    "Cucumbers (greenhouse)":     PALETTE[10],  # red-orange
+    "Eggs":                       PALETTE[4],
+    "Fish (tuna, canned)":        PALETTE[9],
+    "Lentils":                    PALETTE[1],
+    "Lettuce":                    PALETTE[2],
+    "Meat (beef, canned)":        PALETTE[10],
+    "Milk (powder)":              PALETTE[4],
+    "Pasta (spaghetti)":          PALETTE[9],
+    "Salt":                       PALETTE[1],
+    "Tea":                        PALETTE[2],
+    "Tomatoes (paste)":           PALETTE[10],
 }
 
 # Short display names for commodity labels.
@@ -1266,11 +1311,8 @@ _COMM_UNITS: dict = {
     "Chickpeas":                  "900 g",
     "Cucumbers (greenhouse)":     "1 kg",
     "Eggs":                       "30 pcs",
-    "Fish (sardine, canned)":     "125 g",
     "Fish (tuna, canned)":        "185 g",
     "Lentils":                    "900 g",
-    "Lentils (green)":            "1 kg",
-    "Lentils (red)":              "1 kg",
     "Lettuce":                    "1 head",
     "Meat (beef, canned)":        "200 g",
     "Milk (powder)":              "750 g",
@@ -1302,9 +1344,6 @@ def _fig_stacked_bar_govs(prices, gov_order):
         .assign(price=lambda x: x["price"].round(0))
     )
 
-    color_map = {c: _COMM_PALETTE[i % len(_COMM_PALETTE)]
-                 for i, c in enumerate(_GOVS_COMMON_COMMS)}
-
     fig = go.Figure()
     for comm in _GOVS_COMMON_COMMS:
         sub = bar[bar["commodity"] == comm].set_index("admin1").reindex(gov_order)
@@ -1314,8 +1353,8 @@ def _fig_stacked_bar_govs(prices, gov_order):
             name=f"{short} ({unit})",
             x=gov_order,
             y=sub["price"].values,
-            marker_color=color_map[comm],
-            visible=True if comm in _GOVS_DEFAULT_COMMS else "legendonly",
+            marker_color=_COMM_COLORS.get(comm, "#888888"),
+            visible=True if comm in _GOVS_DEFAULT_COMMS else False,
             hovertemplate=(
                 "<b>%{x}</b><br>"
                 + short + f" <span style='color:#888'>per {unit}</span>"
@@ -1323,18 +1362,40 @@ def _fig_stacked_bar_govs(prices, gov_order):
             ),
         ))
 
+    # Totals on top of each bar (sum of default-visible commodities only)
+    totals = {g: 0.0 for g in gov_order}
+    for comm in _GOVS_DEFAULT_COMMS:
+        if comm not in _GOVS_COMMON_COMMS:
+            continue
+        sub = bar[bar["commodity"] == comm].set_index("admin1").reindex(gov_order)
+        for g, v in zip(gov_order, sub["price"].values):
+            if pd.notna(v):
+                totals[g] += float(v)
+
+    annotations = [
+        dict(
+            x=g, y=totals[g],
+            text=f"<b>{int(round(totals[g])):,}</b>",
+            showarrow=False, yshift=12,
+            font=dict(size=11, color=COLORS["deep_navy"], family="DM Sans, sans-serif"),
+        )
+        for g in gov_order
+    ]
+    y_top = max(totals.values()) if totals else 0
     fig.update_layout(
         **_BASE,
         barmode="stack",
         height=500,
-        margin=dict(l=60, r=220, t=20, b=60),
+        margin=dict(l=60, r=220, t=40, b=60),
         legend=dict(orientation="v", x=1.01, y=1, font=dict(size=10)),
         xaxis=dict(showgrid=False),
         yaxis=dict(
             title="Avg price (LBP)",
             gridcolor="#EEF1F5",
             tickformat=",",
+            range=[0, y_top * 1.10] if y_top > 0 else None,
         ),
+        annotations=annotations,
         hovermode="x unified",
     )
     return fig.to_json()
@@ -1368,16 +1429,16 @@ def _fig_food_price_choropleth(prices):
         locations="gov",
         featureidkey="properties.shapeName",
         color="avg_usd",
+        # Single-hue orange ramp: lighter = cheaper, darker = pricier.
         color_continuous_scale=[
-            [0.0, "#e8f4fb"],
-            [0.4, PALETTE[2]],
-            [0.7, PALETTE[0]],
-            [1.0, COLORS["deep_navy"]],
+            [0.0, "#fff3e0"],   # very pale orange
+            [0.5, "#f78b32"],   # PALETTE[4] light orange
+            [1.0, "#8a3f00"],   # darker shade of PALETTE[0] for the deepest tile
         ],
         map_style="carto-positron",
         center={"lat": 33.85, "lon": 35.86},
         zoom=7,
-        opacity=0.80,
+        opacity=0.85,
         labels={"avg_usd": "Avg price (USD)"},
         hover_name="gov",
         hover_data={"gov": False, "avg_usd": ":.2f"},
@@ -1435,6 +1496,57 @@ def _fig_price_treemap_districts(prices):
         margin=dict(l=10, r=10, t=10, b=10),
         showlegend=False,
         coloraxis_showscale=False,
+    )
+    return fig.to_json()
+
+
+def _fig_supermarket_compare(smkt_df):
+    """Clustered horizontal bar: 10 staples, two anonymised supermarkets.
+
+    Two bars per item (one per supermarket), grouped side-by-side. Items
+    sorted by absolute LBP gap descending so the largest discrepancy
+    (Halloumi Taanyel) sits at the top.
+    """
+    pivot = smkt_df.pivot_table(index="item", columns="supermarket",
+                                values="price_lbp").reset_index()
+    pivot["gap"] = (pivot["Supermarket A"] - pivot["Supermarket B"]).abs()
+    pivot = pivot.sort_values("gap", ascending=True)  # ascending so largest gap is at the top of the hbar
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        name="Supermarket A",
+        y=pivot["item"],
+        x=pivot["Supermarket A"],
+        orientation="h",
+        marker_color=PALETTE[5],   # mauve / dusty pink
+        marker_line_width=0,
+        hovertemplate="<b>%{y}</b><br>Supermarket A: %{x:,.0f} LBP<extra></extra>",
+    ))
+    fig.add_trace(go.Bar(
+        name="Supermarket B",
+        y=pivot["item"],
+        x=pivot["Supermarket B"],
+        orientation="h",
+        marker_color=PALETTE[3],   # purple
+        marker_line_width=0,
+        hovertemplate="<b>%{y}</b><br>Supermarket B: %{x:,.0f} LBP<extra></extra>",
+    ))
+
+    fig.update_layout(
+        **_BASE,
+        barmode="group",
+        bargap=0.25,
+        bargroupgap=0.08,
+        height=max(420, 46 * len(pivot) + 80),
+        margin=dict(l=180, r=40, t=30, b=50),
+        xaxis=dict(
+            title="Price (LBP)",
+            tickformat=",",
+            gridcolor="#EEF1F5",
+        ),
+        yaxis=dict(showgrid=False),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        hovermode="y unified",
     )
     return fig.to_json()
 
@@ -1518,17 +1630,18 @@ def _fig_choropleth(geo_snap):
         choro_df, geojson=geojson,
         locations="gov", featureidkey="properties.shapeName",
         color="phase3_pct_display",
+        # Single-hue red-orange severity ramp: lighter = lower share in
+        # acute food insecurity, darker = higher.
         color_continuous_scale=[
-            [0,   PALETTE[2]],
-            [0.3, COLORS["ipc_phase_3"]],
-            [0.6, COLORS["ipc_phase_4"]],
-            [1,   COLORS["ipc_phase_5"]],
+            [0.0, "#fde2da"],   # very pale red-orange
+            [0.5, "#e06600"],   # PALETTE[0] orange
+            [1.0, "#7a1d05"],   # darker shade of PALETTE[10] for severity
         ],
         range_color=(0, 60),
         map_style="carto-positron",
         center={"lat": 33.85, "lon": 35.86},
         zoom=7,
-        opacity=0.75,
+        opacity=0.85,
         labels={"phase3_pct_display": "Phase 3+ (%)"},
         hover_name="gov",
         hover_data={"gov": False, "phase3_pct_display": True},
@@ -1716,7 +1829,9 @@ def _fig_ipc_bar(geo_snap):
         margin=dict(l=40, r=20, t=44, b=80),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         yaxis=dict(title="% of population", ticksuffix="%", gridcolor="#EEF1F5", range=[0, 100]),
-        xaxis=dict(tickangle=-30, showgrid=False),
+        xaxis=dict(tickangle=-30, showgrid=False,
+                   categoryorder="array",
+                   categoryarray=bar_df["gov"].tolist()),
         hovermode="x unified",
     )
     return fig.to_json()
@@ -2326,14 +2441,14 @@ def _section_macro(d):
         "Lebanon's trajectory compared against five regional peers.</p>"
         '<div class="g2">'
         '<div class="chart-card" style="margin-bottom:0">'
-        '<div class="chart-title">GDP: Lebanon</div>'
+        '<div class="chart-title">Lebanon GDP (USD Billions) by Year</div>'
         '<div class="chart-caption">Lebanon GDP in USD billions by year. '
         'Event markers show the 2019 banking crisis, 2020 Beirut port explosion, '
         'and 2021 subsidy removal. Source: World Bank WDI.</div>'
         + _plot_tag("gdp_rate", gdp_json) +
         '</div>'
         '<div class="chart-card" style="margin-bottom:0">'
-        '<div class="chart-title">Official vs Unofficial Exchange Rate: The "Two Lebanons"</div>'
+        '<div class="chart-title">LBP per USD by Date: Official vs Unofficial Rate</div>'
         '<div class="chart-caption">Y axis is logarithmic so the gap is readable across the full range. '
         'The shaded gap between the two lines <strong>is</strong> the crisis. '
         'At its peak, market traders charged ~50x the official rate.</div>'
@@ -2341,14 +2456,14 @@ def _section_macro(d):
         '</div>'
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Personal Remittances: % of GDP</div>'
+        '<div class="chart-title">Personal Remittances (% of GDP) by Country, 2023 Snapshot</div>'
         '<div class="chart-caption">In ' + str(rem_latest_year) + ', remittances equalled '
         '<strong>' + "{:.1f}%".format(rem_latest_pct) + '</strong> of Lebanon\'s GDP &mdash; '
         'among the highest in the world. The diaspora is what kept Lebanon from total collapse.</div>'
         + _plot_tag("remittances", remittances_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Inflation Heatmap: Country &times; Year</div>'
+        '<div class="chart-title">Annual Inflation Rate (%) by Country and Year, 2015&ndash;2024</div>'
         '<div class="chart-caption">Each cell shows the annual inflation rate from 2015 onwards. '
         'A diverging scale anchors at 0%: green = deflation, '
         'near-white = stable, orange-to-red = high inflation (capped at 300% so Lebanon&rsquo;s 221% '
@@ -2356,7 +2471,7 @@ def _section_macro(d):
         + _plot_tag("inflation_heatmap", heat_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">GDP per Capita: Country Comparison</div>'
+        '<div class="chart-title">GDP per Capita (USD) by Year and Country, 2015 Onwards</div>'
         '<div class="chart-caption">Annual GDP per capita in USD, 2015 onwards. '
         "Lebanon's collapse from ~$8k to under $4k stands out against peer trajectories. "
         'Country colours follow the project palette and stay consistent across all charts. '
@@ -2370,14 +2485,16 @@ def _section_macro(d):
 
 
 def _section_food(d):
-    prices = d["prices"]
-    basket = d["basket"]
-    wdi    = d["wdi"]
+    prices   = d["prices"]
+    basket   = d["basket"]
+    wdi      = d["wdi"]
+    smkt_cmp = d["smkt_cmp"]
 
     idx_json          = _fig_price_index(prices)
     food_choro_json   = _fig_food_price_choropleth(prices)
     dist_treemap_json = _fig_price_treemap_districts(prices)
     food_json         = _build_food_data(prices, basket)
+    smkt_cmp_json     = _fig_supermarket_compare(smkt_cmp)
 
     # --- Stacked bar: governorate order + multi-year data -------------------
     _df22_bar = prices[
@@ -2465,7 +2582,7 @@ def _section_food(d):
         '<p class="section-sub">How Lebanon\'s currency collapse drove staple food prices '
         'beyond reach &mdash; tracked through WFP market data across six basket commodities.</p>'
         '<div class="chart-card">'
-        '<div class="chart-title">Food Prices Relative to 2019: How Far They&rsquo;ve Climbed</div>'
+        '<div class="chart-title">Commodity Price Index (2019 = 100) by Month, 2018&ndash;2023</div>'
         '<div class="chart-caption">Each line shows the monthly price of a basket commodity '
         'normalized so its 2019 average equals 100. A reading of <strong>500</strong> means the '
         'commodity costs 5&times; its 2019 level; <strong>200</strong> means it has doubled. '
@@ -2474,12 +2591,26 @@ def _section_food(d):
         _plot_tag("price_index", idx_json) +
         '</div>'
         '<div class="chart-card">'
+        '<div class="chart-title">Average Commodity Price (USD) by Governorate, 2022</div>'
+        '<div class="chart-caption">Average USD price across all commodities surveyed by WFP in 2022. '
+        'Lighter shade = cheaper, darker shade = pricier.</div>'
+        + _plot_tag("food_choro", food_choro_json) +
+        '</div>'
+        '<div class="chart-card">'
+        '<div class="chart-title">Average Commodity Price (USD) by District, 2022</div>'
+        '<div class="chart-caption">26 districts nested inside 8 governorates. '
+        'Tile area encodes average USD price across all commodities in 2022. '
+        'Larger tile = pricier district. Each governorate has its own distinct colour; '
+        'districts within it share that colour.</div>'
+        + _plot_tag("dist_treemap", dist_treemap_json) +
+        '</div>'
+        '<div class="chart-card">'
         '<script type="application/json" id="gov-bar-comms">'
         + json.dumps(gov_bar_data) +
         '</script>'
-        '<div class="chart-title">Food Prices by Governorate &amp; Commodity</div>'
+        '<div class="chart-title">Average Food Price (LBP) by Governorate and Commodity, Selected Year</div>'
         '<div class="chart-caption">Average LBP price per commodity per governorate for the selected year. '
-        'Each commodity is priced at its <strong>standard package size</strong> (shown in legend) &mdash; '
+        'Each commodity is priced at its <strong>standard package size</strong> (shown in legend) &ndash; '
         'oil is 5 L, sugar is 5 kg, tea is 160 g, canned beef is 200 g. '
         'Bars reflect each item on its own scale; use the chart to compare each commodity <em>across regions</em>.</div>'
         '<div class="filter-bar" style="margin-bottom:6px">'
@@ -2507,19 +2638,15 @@ def _section_food(d):
         + '</div>'
         + _plot_tag("stacked_bar_govs", stacked_bar_json) +
         '</div>'
+        # Supermarket price discrepancy (final card in section)
         '<div class="chart-card">'
-        '<div class="chart-title">Average Commodity Price by Governorate (2022)</div>'
-        '<div class="chart-caption">Average USD price across all commodities surveyed by WFP in 2022. '
-        'Darker = pricier governorate.</div>'
-        + _plot_tag("food_choro", food_choro_json) +
-        '</div>'
-        '<div class="chart-card">'
-        '<div class="chart-title">Average Commodity Price by District (2022)</div>'
-        '<div class="chart-caption">26 districts nested inside 8 governorates. '
-        'Tile area encodes average USD price across all commodities in 2022. '
-        'Larger tile = pricier district. Each governorate has its own distinct colour; '
-        'districts within it share that colour.</div>'
-        + _plot_tag("dist_treemap", dist_treemap_json) +
+        '<div class="chart-title">Price (LBP) per Item: Two Lebanese Supermarkets Compared</div>'
+        '<div class="chart-caption">Side-by-side LBP prices for 10 staples at two anonymised '
+        'Lebanese supermarkets. Items sorted by absolute price gap. '
+        '<strong>Halloumi Taanyel</strong> sits at the top: Supermarket A charges over 3&times; '
+        'what Supermarket B does for the same item, while basics like rice and pasta are '
+        'effectively identical between the two.</div>'
+        + _plot_tag("smkt_cmp", smkt_cmp_json) +
         '</div>'
         '<p class="source-line">Sources: WFP VAM Food Price Monitoring '
         '&middot; Unofficial exchange rate from WFP parallel market data</p>'
@@ -2583,14 +2710,14 @@ def _section_insecurity(d):
         + ipc_filter +
         # IPC choropleth (full width)
         '<div class="chart-card">'
-        '<div class="chart-title">IPC Phase 3+ by Governorate</div>'
+        '<div class="chart-title">% of Population in IPC Phase 3+ by Governorate, Selected Date</div>'
         '<div class="chart-caption">Share of population in acute food insecurity. '
-        'Darker = more severe.</div>'
+        'Lighter shade = lower share, darker shade = higher share.</div>'
         + _plot_tag("choropleth", choro_json) +
         '</div>'
         # Donut (full width)
         '<div class="chart-card">'
-        '<div class="chart-title">Phase 3+ by Population Group</div>'
+        '<div class="chart-title">IPC Phase 3+ Population Share (%) by Group, Latest Survey per Group</div>'
         '<div class="chart-caption">Share of people in acute food insecurity (IPC Phase 3+) '
         'by population group, at the most recent available survey per group. '
         'Hover for headcounts and exact survey date.</div>'
@@ -2598,9 +2725,9 @@ def _section_insecurity(d):
         '</div>'
         # IPC stacked bar (full width)
         '<div class="chart-card">'
-        '<div class="chart-title">IPC Phase Distribution by Governorate</div>'
+        '<div class="chart-title">IPC Phase Distribution (% of Population) by Governorate, Selected Date</div>'
         '<div class="chart-caption">Stacked bars showing % of analysed population '
-        'in each IPC phase. Sorted by Phase 3+ share.</div>'
+        'in each IPC phase. Governorates sorted descending by Phase 3+ share.</div>'
         + _plot_tag("ipc_bar", ipc_bar_json) +
         '</div>'
         '<p class="source-line">Sources: IPC Global Platform '
@@ -2654,34 +2781,45 @@ def _section_health(d):
         'with a lagged view against food price shocks. The crisis is still unfolding: '
         'nutrition indicators worsen years after the price shock.</p>'
         '<div class="chart-card">'
-        '<div class="chart-title">Health Indicator Explorer</div>'
+        '<div class="chart-title">Health Indicators (2000 = 100) by Year, Lebanon</div>'
         '<div class="chart-caption">All indicators normalized to 2000&nbsp;=&nbsp;100 for side-by-side '
         'comparison. Toggle the pills to show or hide indicators.</div>'
         + explorer_filter +
         '<div id="plot-health_explorer" class="plot-container" style="min-height:380px"></div>'
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Key Nutrition &amp; Mortality Trends</div>'
+        '<div class="chart-title">Nutrition and Mortality Indicators by Year, Lebanon (2000&ndash;2023)</div>'
         '<div class="chart-caption">Model-based estimates &middot; Both sexes &middot; '
         'Lebanon (LBN) &middot; Data from 2000. Shaded region: 2020&ndash;2022 crisis window.</div>'
         + _plot_tag("small_multiples", small_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Food Prices vs Stunting Prevalence: Lag View</div>'
-        '<div class="chart-caption">Top: Monthly basket price index (2019=100) &middot; '
-        'Bottom: Annual stunting prevalence %. '
-        'Shaded band highlights the 2020&ndash;2022 crisis window.</div>'
+        '<div class="chart-title">Basket Price Index and Stunting Prevalence (%) by Year, Lebanon</div>'
+        '<div class="chart-caption">'
+        '<strong>Top panel &mdash; Basket Price Index (2019&nbsp;=&nbsp;100):</strong> '
+        'For each of the six WFP basket commodities (bread, rice, sunflower oil, eggs, '
+        'frozen chicken, wheat flour), divide the monthly USD price by that commodity\'s '
+        '2019 average and multiply by 100. Then take a simple unweighted average across '
+        'the six items to get one index value per month. A reading of '
+        '<strong>200</strong> means the basket costs 2&times; its 2019 level; '
+        '<strong>500</strong> means 5&times;. The index uses USD prices, which strips '
+        'out the LBP collapse and isolates real purchasing-power loss; it weights every '
+        'commodity equally, so it is a rough proxy rather than a true CPI. '
+        '<strong>Bottom panel:</strong> Annual stunting prevalence (%) in Lebanese '
+        'children, WHO. Shaded band highlights the 2020&ndash;2022 crisis window so the '
+        'eye can read the lag &mdash; nutrition outcomes deteriorate after the price '
+        'shock, not at the same time.</div>'
         + _plot_tag("lag", lag_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Lebanon Child Health: Before &amp; After the Economic Collapse</div>'
+        '<div class="chart-title">Lebanese Child Health Indicators (% Change Since 2019) by Indicator</div>'
         '<div class="chart-caption">Percentage change in key health indicators between 2019 '
         'and the latest available year. All indicators are &ldquo;lower is better&rdquo; &mdash; '
         'green = improved, red = worsened. Hover for exact values.</div>'
         + _plot_tag("dumbbell", db_json) +
         '</div>'
         '<div class="chart-card">'
-        '<div class="chart-title">Regional Under-5 Mortality: MENA Comparison</div>'
+        '<div class="chart-title">Under-5 Mortality (per 1,000 Live Births) by Year and Country, MENA</div>'
         '<div class="chart-caption">Under-5 mortality rate (per 1,000 live births). '
         'Lebanon highlighted in red &middot; World average dashed &middot; '
         'Source: WHO &middot; 2000&ndash;2023.</div>'

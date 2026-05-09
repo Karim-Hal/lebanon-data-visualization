@@ -21,6 +21,15 @@ def load_wfp_prices() -> pd.DataFrame:
 
 
 @st.cache_data
+def load_supermarket_compare() -> pd.DataFrame:
+    """Side-by-side basket comparison of 10 staples at two Lebanese
+    supermarkets (anonymised "A" vs "B" as published in the source).
+    Single-snapshot LBP prices.
+    """
+    return pd.read_csv(DATA / "supermarket_compare.csv")
+
+
+@st.cache_data
 def load_exchange_rate() -> pd.DataFrame:
     df = pd.read_csv(DATA / "wfp_exchange_rate.csv", parse_dates=["date"])
     df["year_month"] = df["date"].dt.to_period("M").astype(str)
